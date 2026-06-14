@@ -7,6 +7,7 @@ const { buildSppgFilter } = require("../middleware/rbac");
 const { kirimEmail } = require("./email.service");
 const excelService = require("./excel.service");
 const { buildSyntheticMenuSnapshotForSppg, buildCategoryAllocation, generateNamaPenerima } = require("./dummyNutrition.service");
+const { HttpError } = require("../middleware/errorHandler");
 
 const MAX_ROWS = 50000;
 
@@ -30,11 +31,47 @@ function computeEffectiveCapacity({ sppgId, kapasitasPorsiPerHari, penerimaAktif
   return Math.round(seededRange(simpleHash(sppgId + "|kapasitas"), 120, 480));
 }
 
-function buildAccessFilter(user, extra = {}) {
+function buildAccessFilter(user, extra = {}, options = {}) {
   const f = buildSppgFilter(user);
+  if (options.isSppgModel) {
+    if (f.sppgId) return { ...extra, id: f.sppgId };
+    if (f.sppg && f.sppg.provinsi) return { ...extra, provinsi: f.sppg.provinsi };
+    if (f.id) return { ...extra, id: f.id };
+    return extra;
+  }
   if (f.sppgId) return { ...extra, sppgId: f.sppgId };
   if (f.sppg) return { ...extra, sppg: f.sppg };
+  if (f.id) return { ...extra, id: f.id };
   return extra;
+}
+
+async function validateLaporanFilter(user, filter) {
+  const role = user && user.peran;
+  if (!role || role === "ADMIN" || role === "PEJABAT_BGN") return;
+
+  if (role === "OPERATOR_SPPG" || role === "ASISTEN_LAPANGAN") {
+    if (!user.sppgId) {
+      throw new HttpError(403, "Akun Anda belum terhubung dengan SPPG", "NO_SPPG_BINDING");
+    }
+    if (filter.sppgId && filter.sppgId !== user.sppgId) {
+      throw new HttpError(403, "Anda hanya boleh mengakses data SPPG sendiri", "FORBIDDEN");
+    }
+  }
+
+  if (role === "PENGAWAS_GIZI") {
+    if (filter.provinsi && filter.provinsi !== user.wilayahZona) {
+      throw new HttpError(403, "Wilayah di luar zona pengawasan Anda", "FORBIDDEN");
+    }
+    if (filter.sppgId) {
+      const sppg = await prisma.sppg.findUnique({
+        where: { id: filter.sppgId },
+        select: { provinsi: true },
+      });
+      if (!sppg || sppg.provinsi !== user.wilayahZona) {
+        throw new HttpError(403, "SPPG di luar zona pengawasan Anda", "FORBIDDEN");
+      }
+    }
+  }
 }
 
 function parseDistribusiMeta(catatan) {
@@ -46,7 +83,8 @@ function parseDistribusiMeta(catatan) {
   }
 }
 
-async function fetchDistribusi({ user, filter }) {
+async function fetchDistribusi({ user, filter, limit }) {
+  await validateLaporanFilter(user, filter);
   const where = buildAccessFilter(user, {});
   if (filter.sppgId) where.sppgId = filter.sppgId;
   if (filter.provinsi) where.sppg = { provinsi: filter.provinsi };
@@ -55,17 +93,49 @@ async function fetchDistribusi({ user, filter }) {
     if (filter.periodeAwal) where.tanggalDistribusi.gte = startOfDay(filter.periodeAwal);
     if (filter.periodeAkhir) where.tanggalDistribusi.lte = endOfDay(filter.periodeAkhir);
   }
-  return prisma.distribusiMbg.findMany({
+  let rows = await prisma.distribusiMbg.findMany({
     where,
-    take: MAX_ROWS,
+    take: limit || MAX_ROWS,
     include: { sppg: { select: { kodeSppg: true, namaSppg: true, provinsi: true } } },
     orderBy: { tanggalDistribusi: "desc" },
   });
+
+  if (rows.length === 0) {
+    const sppgWhere = buildAccessFilter(user, { statusAktif: true }, { isSppgModel: true });
+    if (filter.sppgId) sppgWhere.id = filter.sppgId;
+    if (filter.provinsi) sppgWhere.provinsi = filter.provinsi;
+    const sppgFallback = await prisma.sppg.findMany({
+      where: sppgWhere,
+      select: { id: true, kodeSppg: true, namaSppg: true, provinsi: true, kapasitasPorsiPerHari: true },
+      take: limit || 100,
+      orderBy: { namaSppg: "asc" },
+    });
+    const tgl = filter.periodeAkhir ? endOfDay(filter.periodeAkhir) : new Date();
+    rows = sppgFallback.map((s) => {
+      const factor = seededRange(simpleHash(s.id + String(tgl)), 0.35, 0.9);
+      const totalPorsi = Math.max(1, Math.round((s.kapasitasPorsiPerHari || 1) * factor));
+      const cat = buildCategoryAllocation(s, tgl, totalPorsi);
+      return {
+        id: `fallback-${s.id}`,
+        sppgId: s.id,
+        tanggalDistribusi: tgl,
+        porsiPesertaDidik: cat.PESERTA_DIDIK,
+        porsiBalita: cat.BALITA,
+        porsiIbuHamil: cat.IBU_HAMIL,
+        porsiIbuMenyusui: cat.IBU_MENYUSUI,
+        totalPorsi: cat.PESERTA_DIDIK + cat.BALITA + cat.IBU_HAMIL + cat.IBU_MENYUSUI,
+        status: "TERVALIDASI",
+        sppg: { kodeSppg: s.kodeSppg, namaSppg: s.namaSppg, provinsi: s.provinsi },
+        catatan: null,
+      };
+    });
+  }
+  return rows;
 }
 
 async function previewDistribusi({ user, filter }) {
-  const rows = await fetchDistribusi({ user, filter });
-  let enriched = rows.map((r) => {
+  const rows = await fetchDistribusi({ user, filter, limit: 100 });
+  const enriched = rows.map((r) => {
     const meta = parseDistribusiMeta(r.catatan);
     const fallback = (!meta || !meta.menuHarian)
       ? buildSyntheticMenuSnapshotForSppg({ sppgId: r.sppgId, date: r.tanggalDistribusi, totalMenus: 1000 })
@@ -80,41 +150,6 @@ async function previewDistribusi({ user, filter }) {
       totalEnergiHariIni: menuHarian && menuHarian.totalNutrition ? menuHarian.totalNutrition.energyKkal : 0,
     };
   });
-  if (enriched.length === 0) {
-    const sppgWhere = buildAccessFilter(user, { statusAktif: true });
-    if (filter.sppgId) sppgWhere.id = filter.sppgId;
-    if (filter.provinsi) sppgWhere.provinsi = filter.provinsi;
-    const sppgFallback = await prisma.sppg.findMany({
-      where: sppgWhere,
-      select: { id: true, kodeSppg: true, namaSppg: true, provinsi: true, kapasitasPorsiPerHari: true },
-      take: 100,
-      orderBy: { namaSppg: "asc" },
-    });
-    const tgl = filter.periodeAkhir ? endOfDay(filter.periodeAkhir) : new Date();
-    enriched = sppgFallback.map((s) => {
-      const snap = buildSyntheticMenuSnapshotForSppg({ sppgId: s.id, date: tgl, totalMenus: 1000 });
-      const factor = seededRange(simpleHash(s.id + String(tgl)), 0.35, 0.9);
-      const totalPorsi = Math.max(1, Math.round((s.kapasitasPorsiPerHari || 1) * factor));
-      // Proporsi realistis per SPPG (bervariasi per tanggal).
-      const cat = buildCategoryAllocation(s, tgl, totalPorsi);
-      return {
-        id: `fallback-${s.id}`,
-        sppgId: s.id,
-        tanggalDistribusi: tgl,
-        porsiPesertaDidik: cat.PESERTA_DIDIK,
-        porsiBalita: cat.BALITA,
-        porsiIbuHamil: cat.IBU_HAMIL,
-        porsiIbuMenyusui: cat.IBU_MENYUSUI,
-        totalPorsi: cat.PESERTA_DIDIK + cat.BALITA + cat.IBU_HAMIL + cat.IBU_MENYUSUI,
-        status: "TERVALIDASI",
-        sppg: { kodeSppg: s.kodeSppg, namaSppg: s.namaSppg, provinsi: s.provinsi },
-        menuHarian: snap.menuHarian,
-        menuMingguan: snap.menuMingguan,
-        totalMenuHariIni: snap.menuHarian ? snap.menuHarian.menuCount : 0,
-        totalEnergiHariIni: snap.menuHarian && snap.menuHarian.totalNutrition ? snap.menuHarian.totalNutrition.energyKkal : 0,
-      };
-    });
-  }
   const totalPorsi = enriched.reduce((s, r) => s + r.totalPorsi, 0);
   return {
     totalRows: enriched.length,
@@ -129,7 +164,7 @@ async function previewDistribusi({ user, filter }) {
         ? Math.round((enriched.reduce((s, r) => s + (r.totalMenuHariIni || 0), 0) / enriched.length) * 100) / 100
         : 0,
     },
-    rows: enriched.slice(0, 100),
+    rows: enriched,
   };
 }
 
@@ -148,7 +183,8 @@ async function exportDistribusi({ user, filter }) {
   return excelService.generateLaporanDistribusi({ rows, summary, filter });
 }
 
-async function fetchStatusGizi({ user, filter }) {
+async function fetchStatusGizi({ user, filter, limit }) {
+  await validateLaporanFilter(user, filter);
   const where = {};
   if (filter.sppgId) where.penerima = { sppgId: filter.sppgId };
   else if (filter.provinsi) where.penerima = { sppg: { provinsi: filter.provinsi } };
@@ -157,6 +193,10 @@ async function fetchStatusGizi({ user, filter }) {
     if (f.sppgId) where.penerima = { sppgId: f.sppgId };
     else if (f.sppg) where.penerima = { sppg: f.sppg };
   }
+  if (filter.kategori) {
+    if (!where.penerima) where.penerima = {};
+    where.penerima.kategori = filter.kategori;
+  }
   if (filter.periodeAwal || filter.periodeAkhir) {
     where.tanggalPengukuran = {};
     if (filter.periodeAwal) where.tanggalPengukuran.gte = startOfDay(filter.periodeAwal);
@@ -164,7 +204,7 @@ async function fetchStatusGizi({ user, filter }) {
   }
   return prisma.pemantauanGizi.findMany({
     where,
-    take: MAX_ROWS,
+    take: limit || MAX_ROWS,
     include: {
       penerima: {
         select: {
@@ -179,8 +219,8 @@ async function fetchStatusGizi({ user, filter }) {
   });
 }
 
-async function previewStatusGizi({ user, filter }) {
-  const rows = await fetchStatusGizi({ user, filter });
+async function previewStatusGizi({ user, filter, limit = 100 }) {
+  const rows = await fetchStatusGizi({ user, filter, limit });
   let list = rows.map((r) => ({
     // Fallback ke generator kalau r.penerima null (FK mismatch / data lama).
     namaLengkap: (r.penerima && r.penerima.namaLengkap) || generateNamaPenerima(`penerima-${r.penerimaId}-fallback`, "LAKI_LAKI"),
@@ -194,13 +234,14 @@ async function previewStatusGizi({ user, filter }) {
     lilaCm: r.lilaCm,
     zscoreBbU: r.zscoreBbU,
     zscoreTbU: r.zscoreTbU,
+    zscoreBbTb: r.zscoreBbTb,
     statusGizi: r.statusGizi,
     stunting: r.stunting,
   }));
   let usedFallback = false;
   if (list.length === 0) {
     usedFallback = true;
-    const sppgWhere = buildAccessFilter(user, { statusAktif: true });
+    const sppgWhere = buildAccessFilter(user, { statusAktif: true }, { isSppgModel: true });
     if (filter.sppgId) sppgWhere.id = filter.sppgId;
     if (filter.provinsi) sppgWhere.provinsi = filter.provinsi;
     const sppgFallback = await prisma.sppg.findMany({
@@ -234,6 +275,7 @@ async function previewStatusGizi({ user, filter }) {
           lilaCm: Math.round(seededRange(seed + 31, 13, 30) * 10) / 10,
           zscoreBbU: z,
           zscoreTbU: Math.round(seededRange(seed + 41, -2.4, 1.6) * 100) / 100,
+          zscoreBbTb: Math.round(seededRange(seed + 47, -2.2, 1.5) * 100) / 100,
           statusGizi,
           stunting: z < -2.2,
         };
@@ -260,7 +302,7 @@ async function previewStatusGizi({ user, filter }) {
 }
 
 async function exportStatusGizi({ user, filter }) {
-  const data = await previewStatusGizi({ user, filter });
+  const data = await previewStatusGizi({ user, filter, limit: MAX_ROWS });
   if (data.fullRows.length > MAX_ROWS) {
     const e = new Error("Data melebihi 50.000 baris");
     e.statusCode = 413;
@@ -270,7 +312,8 @@ async function exportStatusGizi({ user, filter }) {
 }
 
 async function exportKinerjaSppg({ user, filter }) {
-  const where = buildAccessFilter(user, { statusAktif: true });
+  await validateLaporanFilter(user, filter);
+  const where = buildAccessFilter(user, { statusAktif: true }, { isSppgModel: true });
   if (filter.sppgId) where.id = filter.sppgId;
   if (filter.provinsi) where.provinsi = filter.provinsi;
 
@@ -315,7 +358,8 @@ async function exportKinerjaSppg({ user, filter }) {
 }
 
 async function previewKinerjaSppg({ user, filter }) {
-  const where = buildAccessFilter(user, { statusAktif: true });
+  await validateLaporanFilter(user, filter);
+  const where = buildAccessFilter(user, { statusAktif: true }, { isSppgModel: true });
   if (filter.sppgId) where.id = filter.sppgId;
   if (filter.provinsi) where.provinsi = filter.provinsi;
 
@@ -408,8 +452,58 @@ async function previewKinerjaSppg({ user, filter }) {
   };
 }
 
+async function getPenerimaFallback({ user, filter }) {
+  const sppgWhere = buildAccessFilter(user, { statusAktif: true }, { isSppgModel: true });
+  if (filter.sppgId) sppgWhere.id = filter.sppgId;
+  if (filter.provinsi) sppgWhere.provinsi = filter.provinsi;
+  const sppgFallback = await prisma.sppg.findMany({
+    where: sppgWhere,
+    select: { id: true, namaSppg: true, provinsi: true, kabupatenKota: true },
+    take: 20,
+    orderBy: { namaSppg: "asc" },
+  });
+  const kategoriSet = filter.kategori
+    ? [filter.kategori]
+    : ["PESERTA_DIDIK", "BALITA", "IBU_HAMIL", "IBU_MENYUSUI"];
+  const fallbackRows = [];
+  let counter = 0;
+  for (const s of sppgFallback) {
+    for (const kat of kategoriSet) {
+      for (let j = 0; j < 5; j++) {
+        const seed = `fallback-penerima-${s.id}-${kat}-${counter}`;
+        const seedHash = simpleHash(seed);
+        const isLaki = (seedHash % 100) / 100 < 0.5;
+        const jenisKelamin = isLaki ? "LAKI_LAKI" : "PEREMPUAN";
+        const namaLengkap = generateNamaPenerima(seed, jenisKelamin);
+        const dob = dayjs().subtract(
+          kat === "BALITA" ? 1 + (seedHash % 5)
+            : kat === "PESERTA_DIDIK" ? 6 + (seedHash % 12)
+            : kat === "IBU_HAMIL" ? 18 + (seedHash % 12)
+            : 20 + (seedHash % 10),
+          "year"
+        ).toDate();
+        fallbackRows.push({
+          id: `fallback-${s.id}-${kat}-${j}`,
+          namaLengkap,
+          nikMasked: "************" + String((seedHash >>> 8) % 10000).padStart(4, "0"),
+          tanggalLahir: dob,
+          jenisKelamin,
+          kategori: kat,
+          sppgNama: s.namaSppg,
+          sppgProvinsi: s.provinsi,
+          statusAktif: true,
+        });
+        counter += 1;
+      }
+    }
+  }
+  return fallbackRows;
+}
+
 async function previewPenerima({ user, filter }) {
+  await validateLaporanFilter(user, filter);
   const where = buildAccessFilter(user, {});
+  if (filter.sppgId) where.sppgId = filter.sppgId;
   if (filter.kategori) where.kategori = filter.kategori;
   if (filter.provinsi) where.sppg = { provinsi: filter.provinsi };
   if (filter.search) {
@@ -453,49 +547,14 @@ async function previewPenerima({ user, filter }) {
 
   // Fallback generator kalau DB kosong (supaya UI tidak kosong sebelum cron jalan).
   if (list.length === 0) {
-    const sppgWhere = buildAccessFilter(user, { statusAktif: true });
-    if (filter.provinsi) sppgWhere.provinsi = filter.provinsi;
-    const sppgFallback = await prisma.sppg.findMany({
-      where: sppgWhere,
-      select: { id: true, namaSppg: true, provinsi: true, kabupatenKota: true },
-      take: 20,
-      orderBy: { namaSppg: "asc" },
-    });
-    const kategoriSet = filter.kategori
-      ? [filter.kategori]
-      : ["PESERTA_DIDIK", "BALITA", "IBU_HAMIL", "IBU_MENYUSUI"];
-    const now = new Date();
-    const fallbackRows = [];
-    let counter = 0;
-    for (const s of sppgFallback) {
-      for (const kat of kategoriSet) {
-        for (let j = 0; j < 5; j++) {
-          const seed = `fallback-penerima-${s.id}-${kat}-${counter}`;
-          const seedHash = simpleHash(seed);
-          const isLaki = (seedHash % 100) / 100 < 0.5;
-          const jenisKelamin = isLaki ? "LAKI_LAKI" : "PEREMPUAN";
-          const namaLengkap = generateNamaPenerima(seed, jenisKelamin);
-          const dob = dayjs().subtract(
-            kat === "BALITA" ? 1 + (seedHash % 5)
-              : kat === "PESERTA_DIDIK" ? 6 + (seedHash % 12)
-              : kat === "IBU_HAMIL" ? 18 + (seedHash % 12)
-              : 20 + (seedHash % 10),
-            "year"
-          ).toDate();
-          fallbackRows.push({
-            id: `fallback-${s.id}-${kat}-${j}`,
-            namaLengkap,
-            nikMasked: "************" + String((seedHash >>> 8) % 10000).padStart(4, "0"),
-            tanggalLahir: dob,
-            jenisKelamin,
-            kategori: kat,
-            sppgNama: s.namaSppg,
-            sppgProvinsi: s.provinsi,
-            statusAktif: true,
-          });
-          counter += 1;
-        }
-      }
+    let fallbackRows = await getPenerimaFallback({ user, filter });
+    if (filter.search) {
+      const q = filter.search.toLowerCase();
+      fallbackRows = fallbackRows.filter(
+        (r) =>
+          r.namaLengkap.toLowerCase().includes(q) ||
+          r.nikMasked.toLowerCase().includes(q)
+      );
     }
     total = fallbackRows.length;
     list = fallbackRows.slice(skip, skip + limit);
@@ -521,24 +580,46 @@ async function previewPenerima({ user, filter }) {
 }
 
 async function exportPenerima({ user, filter }) {
+  await validateLaporanFilter(user, filter);
   const where = buildAccessFilter(user, {});
+  if (filter.sppgId) where.sppgId = filter.sppgId;
   if (filter.kategori) where.kategori = filter.kategori;
   if (filter.provinsi) where.sppg = { provinsi: filter.provinsi };
+  if (filter.search) {
+    where.OR = [
+      { namaLengkap: { contains: filter.search, mode: "insensitive" } },
+      { nikMasked: { contains: filter.search, mode: "insensitive" } },
+    ];
+  }
 
-  const data = await prisma.penerimaManfaat.findMany({
+  let data = await prisma.penerimaManfaat.findMany({
     where,
     take: MAX_ROWS,
     include: { sppg: { select: { namaSppg: true, provinsi: true } } },
     orderBy: { namaLengkap: "asc" },
   });
+
+  if (data.length === 0) {
+    let fallbackRows = await getPenerimaFallback({ user, filter });
+    if (filter.search) {
+      const q = filter.search.toLowerCase();
+      fallbackRows = fallbackRows.filter(
+        (r) =>
+          r.namaLengkap.toLowerCase().includes(q) ||
+          r.nikMasked.toLowerCase().includes(q)
+      );
+    }
+    data = fallbackRows;
+  }
+
   const rows = data.map((p) => ({
     nikMasked: p.nikMasked,
     namaLengkap: p.namaLengkap,
     tanggalLahir: p.tanggalLahir,
     jenisKelamin: p.jenisKelamin,
     kategori: p.kategori,
-    sppgNama: p.sppg && p.sppg.namaSppg,
-    sppgProvinsi: p.sppg && p.sppg.provinsi,
+    sppgNama: p.sppgNama || (p.sppg && p.sppg.namaSppg),
+    sppgProvinsi: p.sppgProvinsi || (p.sppg && p.sppg.provinsi),
     statusAktif: p.statusAktif,
   }));
   return excelService.generateLaporanPenerima({ rows, filter });
@@ -575,6 +656,7 @@ async function jalankanJadwalAktif() {
 }
 
 module.exports = {
+  fetchDistribusi,
   previewDistribusi,
   exportDistribusi,
   previewStatusGizi,

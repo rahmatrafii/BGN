@@ -696,8 +696,15 @@ async function runDailyDummyNutrition(options = {}) {
             tinggiBadanCm: anthropo.tinggiBadanCm,
             usiaBulan: anthropo.usiaBulan,
             jenisKelamin: rec.jenisKelamin,
+            kategori: kat,
           });
-          const klas = klasifikasiStatusGizi(z);
+          const klas = klasifikasiStatusGizi(z, {
+            kategori: kat,
+            lilaCm: anthropo.lilaCm,
+            beratBadanKg: anthropo.beratBadanKg,
+            tinggiBadanCm: anthropo.tinggiBadanCm,
+            usiaBulan: anthropo.usiaBulan,
+          });
           const preferred = chooseStatusFromMenu(menu);
           const statusGizi = klas.statusGizi === "GIZI_BAIK" ? preferred : klas.statusGizi;
           const petugasId = operatorBySppg.get(sppg.id) || fallbackPetugasId;

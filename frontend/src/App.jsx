@@ -47,7 +47,14 @@ export default function App() {
         <Route path="penerima/:id" element={<PenerimaDetailPage />} />
         <Route path="penerima/:id/edit" element={<PenerimaFormPage />} />
 
-        <Route path="sppg" element={<SppgListPage />} />
+        <Route
+          path="sppg"
+          element={
+            <ProtectedRoute roles={["ADMIN", "PEJABAT_BGN", "PENGAWAS_GIZI"]}>
+              <SppgListPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="sppg/tambah"
           element={
@@ -56,7 +63,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="sppg/:id" element={<SppgDetailPage />} />
+        <Route
+          path="sppg/:id"
+          element={
+            <ProtectedRoute roles={["ADMIN", "PEJABAT_BGN", "PENGAWAS_GIZI"]}>
+              <SppgDetailPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="sppg/:id/edit"
           element={
@@ -68,9 +82,17 @@ export default function App() {
 
         <Route path="distribusi" element={<DistribusiListPage />} />
         <Route path="distribusi/input" element={<DistribusiFormPage />} />
+        <Route path="distribusi/:id/edit" element={<DistribusiFormPage />} />
 
         <Route path="gizi" element={<GiziListPage />} />
-        <Route path="gizi/input" element={<GiziFormPage />} />
+        <Route
+          path="gizi/input"
+          element={
+            <ProtectedRoute roles={["ADMIN", "PENGAWAS_GIZI", "OPERATOR_SPPG"]}>
+              <GiziFormPage />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="laporan"

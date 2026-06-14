@@ -20,8 +20,10 @@ router.post(
 
 router.get("/", requireRole("ADMIN", "PEJABAT_BGN", "PENGAWAS_GIZI", "OPERATOR_SPPG", "ASISTEN_LAPANGAN"), ctrl.listPenerima);
 router.post("/", requireRole("ADMIN", "OPERATOR_SPPG"), ctrl.buatPenerima);
+router.get("/satuan-pendidikan", requireRole("ADMIN", "PEJABAT_BGN", "PENGAWAS_GIZI", "OPERATOR_SPPG", "ASISTEN_LAPANGAN"), ctrl.listSatuanPendidikan);
 router.get("/:id", requireRole("ADMIN", "PEJABAT_BGN", "PENGAWAS_GIZI", "OPERATOR_SPPG", "ASISTEN_LAPANGAN"), ctrl.detailPenerima);
 router.put("/:id", requireRole("ADMIN", "OPERATOR_SPPG"), ctrl.updatePenerima);
 router.delete("/:id", requireRole("ADMIN", "OPERATOR_SPPG"), ctrl.nonaktifkanPenerima);
+router.patch("/:id/aktifkan", requireRole("ADMIN", "OPERATOR_SPPG"), ctrl.aktifkanPenerima);
 
 module.exports = router;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -36,6 +36,7 @@ export default function GiziFormPage() {
   const [penerima, setPenerima] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [hasil, setHasil] = useState(null);
+  const selectedRef = useRef(false);
 
   const onSearch = async (val) => {
     setSearch(val);
@@ -50,34 +51,71 @@ export default function GiziFormPage() {
   };
 
   const onSelect = async (value, option) => {
+    selectedRef.current = true;
     try {
       const r = await penerimaApi.detail(value);
       setPenerima(r.data);
       setStep(1);
     } catch (_) {
       message.error("Gagal memuat penerima");
+    } finally {
+      setTimeout(() => {
+        selectedRef.current = false;
+      }, 100);
     }
   };
 
-  const onSubmit = async () => {
+  const onSubmit = async (values) => {
     try {
-      const v = await form.validateFields();
       setSubmitting(true);
       const payload = {
         penerimaId: penerima.id,
-        tanggalPengukuran: v.tanggalPengukuran.toISOString(),
-        beratBadanKg: v.beratBadanKg,
-        tinggiBadanCm: v.tinggiBadanCm,
-        lilaCm: v.lilaCm || null,
+        tanggalPengukuran: values.tanggalPengukuran.toISOString(),
+        beratBadanKg: values.beratBadanKg,
+        tinggiBadanCm: values.tinggiBadanCm,
+        lilaCm: values.lilaCm || null,
       };
       const r = await giziApi.create(payload);
       setHasil(r.data);
       setStep(2);
     } catch (err) {
-      const msg = err.response && err.response.data && err.response.data.message;
-      if (msg) message.error(msg);
+      const resData = err.response && err.response.data;
+      if (resData && resData.code === "VALIDATION_ERROR" && resData.fields) {
+        form.setFields(
+          Object.entries(resData.fields).map(([name, errors]) => ({
+            name,
+            errors: Array.isArray(errors) ? errors : [errors],
+          }))
+        );
+      } else {
+        const msg = resData && resData.message;
+        if (msg) message.error(msg);
+      }
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      setTimeout(async () => {
+        if (selectedRef.current) return;
+
+        if (options && options.length > 0) {
+          onSelect(options[0].value, options[0]);
+        } else if ((search || "").trim().length >= 2) {
+          try {
+            const r = await penerimaApi.list({ search: search.trim(), limit: 1 });
+            if (r.data && r.data.length > 0) {
+              onSelect(r.data[0].id, { value: r.data[0].id, label: r.data[0].namaLengkap });
+            } else {
+              message.error("Penerima tidak ditemukan");
+            }
+          } catch (_) {
+            message.error("Gagal mencari penerima");
+          }
+        }
+      }, 50);
     }
   };
 
@@ -93,6 +131,7 @@ export default function GiziFormPage() {
             options={options}
             onSearch={onSearch}
             onSelect={onSelect}
+            onKeyDown={handleKeyDown}
             style={{ width: "100%" }}
             placeholder="Cari NIK atau nama penerima..."
           />
@@ -117,7 +156,7 @@ export default function GiziFormPage() {
             </Descriptions>
           </Card>
           <Card>
-            <Form form={form} layout="vertical" initialValues={{ tanggalPengukuran: dayjs() }}>
+            <Form form={form} layout="vertical" initialValues={{ tanggalPengukuran: dayjs() }} onFinish={onSubmit}>
               <Row gutter={16}>
                 <Col xs={24} md={6}>
                   <Form.Item label="Tanggal Pengukuran" name="tanggalPengukuran" rules={[{ required: true }]}>
@@ -134,9 +173,9 @@ export default function GiziFormPage() {
                     <InputNumber min={30} max={250} step={0.1} style={{ width: "100%" }} />
                   </Form.Item>
                 </Col>
-                {penerima.kategori === "IBU_HAMIL" ? (
+                {penerima.kategori === "IBU_HAMIL" || penerima.kategori === "IBU_MENYUSUI" ? (
                   <Col xs={24} md={6}>
-                    <Form.Item label="LILA (cm)" name="lilaCm">
+                    <Form.Item label="LILA (cm)" name="lilaCm" rules={[{ type: "number", min: 5, max: 50 }]}>
                       <InputNumber min={5} max={50} step={0.1} style={{ width: "100%" }} />
                     </Form.Item>
                   </Col>
@@ -144,7 +183,7 @@ export default function GiziFormPage() {
               </Row>
               <Space>
                 <Button onClick={() => setStep(0)}>Kembali</Button>
-                <Button type="primary" loading={submitting} onClick={onSubmit}>
+                <Button type="primary" loading={submitting} htmlType="submit">
                   Hitung & Simpan
                 </Button>
               </Space>
@@ -188,7 +227,7 @@ export default function GiziFormPage() {
               </Descriptions>
             </Card>
           ) : null}
-          {hasil.klasifikasi.statusGizi === "GIZI_BURUK" || hasil.klasifikasi.stunting ? (
+          {hasil.klasifikasi.statusGizi === "GIZI_BURUK" || hasil.klasifikasi.statusGizi === "GIZI_KURANG" || hasil.klasifikasi.stunting ? (
             <Alert
               type="error"
               showIcon

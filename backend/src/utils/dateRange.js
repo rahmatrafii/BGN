@@ -16,11 +16,27 @@ dayjs.extend(timezone);
 const TZ = "Asia/Jakarta";
 
 function startOfDay(d) {
-  return dayjs(d).tz(TZ).startOf("day").toDate();
+  if (!d) {
+    const dateStr = dayjs().tz(TZ).format("YYYY-MM-DD");
+    return dayjs.utc(dateStr).startOf("day").toDate();
+  }
+  if (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    return dayjs.utc(d).startOf("day").toDate();
+  }
+  const dateStr = dayjs(d).tz(TZ).format("YYYY-MM-DD");
+  return dayjs.utc(dateStr).startOf("day").toDate();
 }
 
 function endOfDay(d) {
-  return dayjs(d).tz(TZ).endOf("day").toDate();
+  if (!d) {
+    const dateStr = dayjs().tz(TZ).format("YYYY-MM-DD");
+    return dayjs.utc(dateStr).endOf("day").toDate();
+  }
+  if (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    return dayjs.utc(d).endOf("day").toDate();
+  }
+  const dateStr = dayjs(d).tz(TZ).format("YYYY-MM-DD");
+  return dayjs.utc(dateStr).endOf("day").toDate();
 }
 
 function rangeArray(days) {

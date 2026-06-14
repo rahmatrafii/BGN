@@ -101,7 +101,7 @@ async function excelPenerima(req, res, next) {
 
 async function pdfDistribusi(req, res, next) {
   try {
-    const data = await laporanService.previewDistribusi({ user: req.user, filter: req.body || {} });
+    const rawRows = await laporanService.fetchDistribusi({ user: req.user, filter: req.body || {} });
     const cols = [
       { key: "tanggal", label: "Tanggal" },
       { key: "kode", label: "Kode SPPG" },
@@ -110,7 +110,7 @@ async function pdfDistribusi(req, res, next) {
       { key: "total", label: "Total Porsi" },
       { key: "status", label: "Status" },
     ];
-    const rows = data.rows.map((r) => ({
+    const rows = rawRows.map((r) => ({
       tanggal: dayjs(r.tanggalDistribusi).format("YYYY-MM-DD"),
       kode: r.sppg && r.sppg.kodeSppg,
       nama: r.sppg && r.sppg.namaSppg,
@@ -118,6 +118,7 @@ async function pdfDistribusi(req, res, next) {
       total: r.totalPorsi,
       status: r.status,
     }));
+    const totalPorsi = rawRows.reduce((s, r) => s + r.totalPorsi, 0);
     const buf = await pdfService.generatePdfBuffer({
       judul: "Laporan Distribusi MBG",
       subjudul:
@@ -126,7 +127,7 @@ async function pdfDistribusi(req, res, next) {
         " s.d " +
         (req.body.periodeAkhir || "-") +
         " | Total porsi: " +
-        (data.summary["Total Porsi"] || 0),
+        totalPorsi,
       columns: cols,
       rows,
     });

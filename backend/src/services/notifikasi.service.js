@@ -1,6 +1,12 @@
 "use strict";
 
 const dayjs = require("dayjs");
+const utc = require("dayjs/plugin/utc");
+const timezone = require("dayjs/plugin/timezone");
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 const { prisma } = require("../config/database");
 const socket = require("./socket.service");
 const email = require("./email.service");
@@ -93,8 +99,8 @@ async function kirimNotifikasiSppgBelumLapor() {
     where: { sppgId: { in: ids }, tanggalDistribusi: { gte: yest, lte: endOfDay(today) } },
     select: { sppgId: true, tanggalDistribusi: true },
   });
-  const setMap = new Set(dist.map((d) => d.sppgId + "|" + dayjs(d.tanggalDistribusi).format("YYYY-MM-DD")));
-  const belumLapor = sppgs.filter((s) => !setMap.has(s.id + "|" + dayjs(yest).format("YYYY-MM-DD")));
+  const setMap = new Set(dist.map((d) => d.sppgId + "|" + dayjs(d.tanggalDistribusi).tz("Asia/Jakarta").format("YYYY-MM-DD")));
+  const belumLapor = sppgs.filter((s) => !setMap.has(s.id + "|" + dayjs(yest).tz("Asia/Jakarta").format("YYYY-MM-DD")));
 
   for (const s of belumLapor) {
     const pengawas = await pengawasUntukProvinsi(s.provinsi);

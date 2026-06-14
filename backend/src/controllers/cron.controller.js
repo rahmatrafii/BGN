@@ -20,6 +20,15 @@ function isAuthorizedVercelCron(req) {
     const match = /^Bearer\s+(.+)$/i.exec(headerToken);
     const provided = match ? match[1].trim() : "";
     if (provided !== expected) {
+      // Fallback: coba decode sebagai JWT token user jika diklik manual dari UI
+      try {
+        const jwt = require("jsonwebtoken");
+        const { ACCESS_SECRET } = require("../config/jwt");
+        const payload = jwt.verify(provided, ACCESS_SECRET);
+        if (["ADMIN", "PEJABAT_BGN", "PENGAWAS_GIZI"].includes(payload.peran)) {
+          return { ok: true, source: "user_jwt_token" };
+        }
+      } catch (_) {}
       return { ok: false, reason: "Bearer token tidak valid" };
     }
     return { ok: true, source: "bearer_cron_secret" };

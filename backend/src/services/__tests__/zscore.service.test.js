@@ -54,9 +54,9 @@ describe("Z-Score Service - rekonsiliasi dengan tabel WHO", () => {
 });
 
 describe("Z-Score Service - hitungZScore", () => {
-  test("balita laki-laki 24 bulan, 11.7762 kg, 87.1161 cm => z mendekati 0", () => {
+  test("balita laki-laki 24 bulan, 12.15 kg, 87.1161 cm => z mendekati 0", () => {
     const z = hitungZScore({
-      beratBadanKg: 11.7762,
+      beratBadanKg: 12.15,
       tinggiBadanCm: 87.1161,
       usiaBulan: 24,
       jenisKelamin: "LAKI_LAKI",
@@ -65,10 +65,31 @@ describe("Z-Score Service - hitungZScore", () => {
     expect(z.zscoreTbU).toBeCloseTo(0, 1);
   });
 
+  test("balita laki-laki 42 bulan di median WHO asli (BB 15.3486 kg, TB 99.8515 cm) => z mendekati 0", () => {
+    const z = hitungZScore({
+      beratBadanKg: 15.3486,
+      tinggiBadanCm: 99.8515,
+      usiaBulan: 42,
+      jenisKelamin: "LAKI_LAKI",
+    });
+    expect(z.zscoreBbU).toBeCloseTo(0, 1);
+    expect(z.zscoreTbU).toBeCloseTo(0, 1);
+  });
+
+  test("balita laki-laki di median BB/TB WHO asli pada TB 97.5 cm (BB 14.6832 kg) => z mendekati 0", () => {
+    const z = hitungZScore({
+      beratBadanKg: 14.6832,
+      tinggiBadanCm: 97.5,
+      usiaBulan: 42,
+      jenisKelamin: "LAKI_LAKI",
+    });
+    expect(z.zscoreBbTb).toBeCloseTo(0, 1);
+  });
+
   test("balita perempuan 12 bulan dengan BB jauh di bawah median => zscoreBbU negatif", () => {
     const z = hitungZScore({
       beratBadanKg: 6.0,
-      tinggiBadanCm: 70.0,
+      tinggiBadanCm: 67.0,
       usiaBulan: 12,
       jenisKelamin: "PEREMPUAN",
     });
@@ -158,5 +179,61 @@ describe("Z-Score Service - validateRange", () => {
   });
   test("nilai valid lolos", () => {
     expect(validateRange({ beratBadanKg: 12, tinggiBadanCm: 90, lilaCm: 14 })).toBeNull();
+  });
+});
+
+describe("Z-Score Service - Ibu Hamil, Menyusui & Anak Sekolah > 60 bulan", () => {
+  test("hitungZScore mengembalikan null untuk IBU_HAMIL dan IBU_MENYUSUI", () => {
+    const z1 = hitungZScore({ beratBadanKg: 50, tinggiBadanCm: 155, usiaBulan: 240, jenisKelamin: "PEREMPUAN", kategori: "IBU_HAMIL" });
+    const z2 = hitungZScore({ beratBadanKg: 50, tinggiBadanCm: 155, usiaBulan: 240, jenisKelamin: "PEREMPUAN", kategori: "IBU_MENYUSUI" });
+    expect(z1.zscoreBbU).toBeNull();
+    expect(z1.zscoreTbU).toBeNull();
+    expect(z1.zscoreBbTb).toBeNull();
+    expect(z2.zscoreBbU).toBeNull();
+    expect(z2.zscoreTbU).toBeNull();
+    expect(z2.zscoreBbTb).toBeNull();
+  });
+
+  test("hitungZScore mengembalikan null untuk PESERTA_DIDIK berusia > 60 bulan", () => {
+    const z = hitungZScore({ beratBadanKg: 30, tinggiBadanCm: 135, usiaBulan: 96, jenisKelamin: "LAKI_LAKI", kategori: "PESERTA_DIDIK" });
+    expect(z.zscoreBbU).toBeNull();
+    expect(z.zscoreTbU).toBeNull();
+    expect(z.zscoreBbTb).toBeNull();
+  });
+
+  test("klasifikasiStatusGizi IBU_HAMIL dan IBU_MENYUSUI berdasarkan LILA", () => {
+    // LILA < 23.5 cm -> GIZI_KURANG
+    const resKurang = klasifikasiStatusGizi({}, { kategori: "IBU_HAMIL", lilaCm: 22.0 });
+    expect(resKurang.statusGizi).toBe("GIZI_KURANG");
+    expect(resKurang.stunting).toBe(false);
+
+    // LILA >= 23.5 cm -> GIZI_BAIK
+    const resBaik = klasifikasiStatusGizi({}, { kategori: "IBU_MENYUSUI", lilaCm: 24.5 });
+    expect(resBaik.statusGizi).toBe("GIZI_BAIK");
+    expect(resBaik.stunting).toBe(false);
+
+    // Tanpa LILA -> Default GIZI_BAIK
+    const resDefault = klasifikasiStatusGizi({}, { kategori: "IBU_HAMIL", lilaCm: null });
+    expect(resDefault.statusGizi).toBe("GIZI_BAIK");
+  });
+
+  test("klasifikasiStatusGizi PESERTA_DIDIK > 60 bulan berdasarkan BMI", () => {
+    // BMI < 18.5 -> GIZI_KURANG
+    // BB = 30 kg, TB = 135 cm (1.35 m) -> BMI = 30 / 1.8225 = 16.46 -> GIZI_KURANG
+    const resKurang = klasifikasiStatusGizi({}, { kategori: "PESERTA_DIDIK", usiaBulan: 96, beratBadanKg: 30, tinggiBadanCm: 135 });
+    expect(resKurang.statusGizi).toBe("GIZI_KURANG");
+    expect(resKurang.stunting).toBe(false);
+
+    // BMI > 25.0 -> GIZI_LEBIH
+    // BB = 50 kg, TB = 135 cm (1.35 m) -> BMI = 50 / 1.8225 = 27.43 -> GIZI_LEBIH
+    const resLebih = klasifikasiStatusGizi({}, { kategori: "PESERTA_DIDIK", usiaBulan: 96, beratBadanKg: 50, tinggiBadanCm: 135 });
+    expect(resLebih.statusGizi).toBe("GIZI_LEBIH");
+    expect(resLebih.stunting).toBe(false);
+
+    // BMI 18.5 - 25.0 -> GIZI_BAIK
+    // BB = 40 kg, TB = 135 cm (1.35 m) -> BMI = 40 / 1.8225 = 21.95 -> GIZI_BAIK
+    const resBaik = klasifikasiStatusGizi({}, { kategori: "PESERTA_DIDIK", usiaBulan: 96, beratBadanKg: 40, tinggiBadanCm: 135 });
+    expect(resBaik.statusGizi).toBe("GIZI_BAIK");
+    expect(resBaik.stunting).toBe(false);
   });
 });

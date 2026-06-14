@@ -1,8 +1,9 @@
-﻿import api from "./axios";
+import api from "./axios";
 import { useAuthStore } from "../store/authStore";
 
-export function getRingkasanPublik(tahun) {
-  const params = tahun ? { tahun } : {};
+export function getRingkasanPublik(tahun, provinsi) {
+  const params = { tahun };
+  if (provinsi) params.provinsi = provinsi;
   return api.get("/public-data/ringkasan", { params }).then((r) => r.data);
 }
 

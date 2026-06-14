@@ -43,11 +43,36 @@ export default function PenerimaFormPage() {
   const [sppgOptions, setSppgOptions] = useState([]);
   const [tanggalLahir, setTanggalLahir] = useState(null);
 
+  const selectedSppgId = Form.useWatch("sppgId", form);
+  const [satuanOptions, setSatuanOptions] = useState(SATUAN_OPTIONS);
+
+  useEffect(() => {
+    if (!selectedSppgId) {
+      setSatuanOptions(SATUAN_OPTIONS);
+      return;
+    }
+    penerimaApi
+      .listSatuanPendidikan({ sppgId: selectedSppgId })
+      .then((r) => {
+        const dbOptions = r.data || [];
+        const defaults = ["SD", "SMP", "MI", "TK", "PAUD", "Posyandu", "Puskesmas"];
+        const combined = Array.from(new Set([...dbOptions, ...defaults]));
+        setSatuanOptions(combined.map((v) => ({ value: v })));
+      })
+      .catch(() => {
+        setSatuanOptions(SATUAN_OPTIONS);
+      });
+  }, [selectedSppgId]);
+
   useEffect(() => {
     if (hasRole("ADMIN", "PENGAWAS_GIZI")) {
       sppgApi.list({ limit: 200 }).then((r) => setSppgOptions(r.data || [])).catch(() => {});
+    } else if (user && user.sppgId) {
+      sppgApi.detail(user.sppgId).then((r) => {
+        if (r.data) setSppgOptions([r.data]);
+      }).catch(() => {});
     }
-  }, [hasRole]);
+  }, [hasRole, user]);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -137,20 +162,17 @@ export default function PenerimaFormPage() {
               <Form.Item
                 label="NIK (16 digit)"
                 name="nik"
-                rules={
-                  isEdit
-                    ? []
-                    : [
-                        { required: true, message: "NIK wajib diisi" },
-                        {
-                          validator: (_, v) => {
-                            const digits = (v || "").replace(/\D/g, "");
-                            if (digits.length !== 16) return Promise.reject("NIK harus 16 digit");
-                            return Promise.resolve();
-                          },
-                        },
-                      ]
-                }
+                rules={[
+                  { required: !isEdit, message: "NIK wajib diisi" },
+                  {
+                    validator: (_, v) => {
+                      if (isEdit && !v) return Promise.resolve(); // Boleh kosong jika tidak diubah
+                      const digits = (v || "").replace(/\D/g, "");
+                      if (digits.length !== 16) return Promise.reject("NIK harus 16 digit");
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
               >
                 <Input
                   maxLength={19}
@@ -184,7 +206,34 @@ export default function PenerimaFormPage() {
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
-              <Form.Item label="Kategori" name="kategori" rules={[{ required: true }]}>
+              <Form.Item
+                label="Kategori"
+                name="kategori"
+                dependencies={["jenisKelamin", "tanggalLahir"]}
+                rules={[
+                  { required: true, message: "Kategori wajib dipilih" },
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      const jk = getFieldValue("jenisKelamin");
+                      if (["IBU_HAMIL", "IBU_MENYUSUI"].includes(value) && jk === "LAKI_LAKI") {
+                        return Promise.reject(new Error("Kategori ini tidak valid untuk laki-laki"));
+                      }
+                      const tgl = getFieldValue("tanggalLahir");
+                      if (tgl && value) {
+                        const now = dayjs();
+                        const usiaBulan = now.diff(dayjs(tgl), "month");
+                        if (value === "BALITA" && (usiaBulan < 0 || usiaBulan > 60)) {
+                          return Promise.reject(new Error("Kategori BALITA hanya untuk usia 0-60 bulan"));
+                        }
+                        if (value === "PESERTA_DIDIK" && usiaBulan < 60) {
+                          return Promise.reject(new Error("Kategori PESERTA_DIDIK hanya untuk usia minimal 5 tahun"));
+                        }
+                      }
+                      return Promise.resolve();
+                    },
+                  }),
+                ]}
+              >
                 <Select
                   options={KATEGORI.map((k) => ({
                     value: k.value,
@@ -211,7 +260,13 @@ export default function PenerimaFormPage() {
             </Col>
             <Col xs={24} md={12}>
               <Form.Item label="Satuan Pendidikan / Layanan" name="satuanPendidikan">
-                <AutoComplete options={SATUAN_OPTIONS} placeholder="Contoh: SDN 1 Bandung, Posyandu Mawar" />
+                <AutoComplete
+                  options={satuanOptions}
+                  placeholder="Contoh: SDN 1 Bandung, Posyandu Mawar"
+                  filterOption={(inputValue, option) =>
+                    (option.value || "").toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+                  }
+                />
               </Form.Item>
             </Col>
           </Row>

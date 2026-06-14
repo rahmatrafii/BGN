@@ -8,3 +8,6 @@ export const konfirmasi = (id) => api.patch(`/distribusi/${id}/konfirmasi`).then
 export const validasi = (id) => api.patch(`/distribusi/${id}/validasi`).then((r) => r.data);
 export const kalkulasiAnggaran = (params) => api.get("/distribusi/kalkulasi-anggaran", { params }).then((r) => r.data);
 export const alertBelumLapor = () => api.get("/distribusi/alert-belum-lapor").then((r) => r.data);
+export const detail = (id) => api.get(`/distribusi/${id}`).then((r) => r.data);
+export const update = (id, payload) => api.put(`/distribusi/${id}`, payload).then((r) => r.data);
+export const remove = (id) => api.delete(`/distribusi/${id}`).then((r) => r.data);

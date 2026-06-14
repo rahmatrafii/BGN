@@ -28,7 +28,7 @@ async function buatPemantauan(req, res, next) {
 
     const beratBadanKg = req.body.beratBadanKg !== undefined ? Number(req.body.beratBadanKg) : null;
     const tinggiBadanCm = req.body.tinggiBadanCm !== undefined ? Number(req.body.tinggiBadanCm) : null;
-    const lilaCm = req.body.lilaCm !== undefined ? Number(req.body.lilaCm) : null;
+    const lilaCm = req.body.lilaCm !== undefined && req.body.lilaCm !== null ? Number(req.body.lilaCm) : null;
 
     const errs = validateRange({ beratBadanKg, tinggiBadanCm, lilaCm });
     if (errs) return res.status(422).json({ success: false, message: "Validasi gagal", code: "VALIDATION_ERROR", fields: errs });
@@ -43,14 +43,25 @@ async function buatPemantauan(req, res, next) {
       throw new HttpError(403, "Hanya SPPG sendiri", "FORBIDDEN");
     }
 
+    if (req.user.peran === "PENGAWAS_GIZI" && penerima.sppg?.provinsi !== req.user.wilayahZona) {
+      throw new HttpError(403, "Penerima di luar wilayah zona pengawasan Anda", "FORBIDDEN");
+    }
+
     const usiaBulan = usiaBulanFrom(penerima.tanggalLahir, tanggal);
     const z = hitungZScore({
       beratBadanKg,
       tinggiBadanCm,
       usiaBulan,
       jenisKelamin: penerima.jenisKelamin,
+      kategori: penerima.kategori,
     });
-    const klas = klasifikasiStatusGizi(z);
+    const klas = klasifikasiStatusGizi(z, {
+      kategori: penerima.kategori,
+      lilaCm,
+      beratBadanKg,
+      tinggiBadanCm,
+      usiaBulan,
+    });
 
     const created = await prisma.pemantauanGizi.create({
       data: {
@@ -158,6 +169,31 @@ async function prevalensi(req, res, next) {
   try {
     const where = {};
     const sppgFilter = buildSppgFilter(req.user);
+
+    if (req.user.peran === "PENGAWAS_GIZI") {
+      if (req.query.provinsi && req.query.provinsi !== req.user.wilayahZona) {
+        throw new HttpError(403, "Anda hanya boleh melihat wilayah zona Anda sendiri", "FORBIDDEN");
+      }
+      if (req.query.sppgId) {
+        const targetSppg = await prisma.sppg.findUnique({
+          where: { id: req.query.sppgId },
+          select: { provinsi: true },
+        });
+        if (!targetSppg || targetSppg.provinsi !== req.user.wilayahZona) {
+          throw new HttpError(403, "SPPG di luar wilayah zona pengawasan Anda", "FORBIDDEN");
+        }
+      }
+    }
+
+    if (req.user.peran === "OPERATOR_SPPG") {
+      if (req.query.sppgId && req.query.sppgId !== req.user.sppgId) {
+        throw new HttpError(403, "Anda hanya boleh melihat prevalensi SPPG Anda sendiri", "FORBIDDEN");
+      }
+      if (req.query.provinsi) {
+        throw new HttpError(403, "Anda tidak boleh memfilter berdasarkan provinsi", "FORBIDDEN");
+      }
+    }
+
     if (req.query.sppgId) where.penerima = { sppgId: req.query.sppgId };
     else if (req.query.provinsi) where.penerima = { sppg: { provinsi: req.query.provinsi } };
     else if (sppgFilter.sppgId) where.penerima = { sppgId: sppgFilter.sppgId };

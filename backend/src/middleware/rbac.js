@@ -24,12 +24,16 @@ function requireRole(...roles) {
 }
 
 async function resolveSppgId(req) {
-  return (
+  let sppgId =
     req.params.sppgId ||
     req.body.sppgId ||
-    req.query.sppgId ||
-    null
-  );
+    req.query.sppgId;
+
+  if (!sppgId && req.baseUrl && req.baseUrl.includes("/sppg") && req.params.id) {
+    sppgId = req.params.id;
+  }
+
+  return sppgId || null;
 }
 
 async function requireSppgAccess(req, res, next) {

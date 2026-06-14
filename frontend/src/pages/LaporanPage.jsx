@@ -33,27 +33,69 @@ const JENIS = [
   { key: "penerima", label: "Penerima Manfaat" },
 ];
 
+const KATEGORI_LABELS = {
+  PESERTA_DIDIK: "Peserta Didik",
+  BALITA: "Balita",
+  IBU_HAMIL: "Ibu Hamil",
+  IBU_MENYUSUI: "Ibu Menyusui",
+};
+
+const JK_LABELS = {
+  LAKI_LAKI: "Laki-laki",
+  PEREMPUAN: "Perempuan",
+};
+
 export default function LaporanPage() {
+  const { user, hasRole } = useAuthStore();
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
   const filterControlStyle = (desktopWidth) => ({ width: isMobile ? "100%" : desktopWidth, maxWidth: "100%" });
   const [jenis, setJenis] = useState("distribusi");
-  const [filter, setFilter] = useState({ periode: [dayjs().subtract(30, "day"), dayjs()], sppgId: null, provinsi: null, kategori: null, page: 1, limit: 25 });
+  const [filter, setFilter] = useState({
+    periode: [dayjs().subtract(30, "day"), dayjs()],
+    sppgId: hasRole("OPERATOR_SPPG") ? user?.sppgId : null,
+    provinsi: null,
+    kategori: null,
+    search: null,
+    page: 1,
+    limit: 25,
+  });
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [sppgOptions, setSppgOptions] = useState([]);
   const [provList, setProvList] = useState([]);
   const [jadwal, setJadwal] = useState([]);
   const { message } = App.useApp();
-  const { hasRole } = useAuthStore();
+
+  const filteredJenis = JENIS.filter((item) => {
+    if (item.key === "status-gizi" || item.key === "kinerja-sppg") {
+      return hasRole("ADMIN", "PEJABAT_BGN", "PENGAWAS_GIZI");
+    }
+    return true;
+  });
 
   useEffect(() => {
-    sppgApi.list({ limit: 200 }).then((r) => setSppgOptions(r.data || [])).catch(() => {});
+    sppgApi.list({ limit: 200 }).then((r) => {
+      const listOpts = r.data || [];
+      setSppgOptions(listOpts);
+      if (hasRole("OPERATOR_SPPG") && user?.sppgId) {
+        if (!listOpts.some((opt) => opt.id === user.sppgId)) {
+          sppgApi.detail(user.sppgId).then((det) => {
+            if (det.data) {
+              setSppgOptions((prev) => {
+                if (prev.some((opt) => opt.id === det.data.id)) return prev;
+                return [...prev, det.data];
+              });
+            }
+          }).catch(() => {});
+        }
+      }
+    }).catch(() => {});
     sppgApi.provinsiList().then((r) => setProvList(r.data || [])).catch(() => {});
     if (hasRole("ADMIN", "PEJABAT_BGN")) {
       laporanApi.listJadwal().then((r) => setJadwal(r.data || [])).catch(() => {});
     }
-  }, [hasRole]);
+  }, [hasRole, user]);
 
   const buildBody = () => ({
     periodeAwal: filter.periode && filter.periode[0] ? filter.periode[0].format("YYYY-MM-DD") : null,
@@ -61,6 +103,7 @@ export default function LaporanPage() {
     sppgId: filter.sppgId || null,
     provinsi: filter.provinsi || null,
     kategori: filter.kategori || null,
+    search: filter.search || null,
     page: filter.page || 1,
     limit: filter.limit || 25,
   });
@@ -141,6 +184,7 @@ export default function LaporanPage() {
       a.download = `Laporan_distribusi_${dayjs().format("YYYYMMDD")}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
+      message.success("Laporan PDF berhasil diunduh");
     } catch (err) {
       message.error("Gagal mengunduh PDF");
     } finally {
@@ -158,10 +202,11 @@ export default function LaporanPage() {
 
   const columnsGizi = [
     { title: "Nama", dataIndex: "namaLengkap" },
-    { title: "Kategori", dataIndex: "kategori" },
+    { title: "Kategori", dataIndex: "kategori", render: (v) => KATEGORI_LABELS[v] || v },
     { title: "SPPG", dataIndex: "sppgNama" },
     { title: "Tgl Ukur", dataIndex: "tanggalPengukuran", render: (v) => v ? dayjs(v).format("DD/MM/YYYY") : "-" },
     { title: "Z BB/U", dataIndex: "zscoreBbU" },
+    { title: "Z BB/TB", dataIndex: "zscoreBbTb", render: (v) => v !== null && v !== undefined ? v : "-" },
     { title: "Status", dataIndex: "statusGizi" },
   ];
 
@@ -179,8 +224,8 @@ export default function LaporanPage() {
   const columnsPenerima = [
     { title: "Nama", dataIndex: "namaLengkap" },
     { title: "NIK", dataIndex: "nikMasked" },
-    { title: "Kategori", dataIndex: "kategori" },
-    { title: "JK", dataIndex: "jenisKelamin" },
+    { title: "Kategori", dataIndex: "kategori", render: (v) => KATEGORI_LABELS[v] || v },
+    { title: "JK", dataIndex: "jenisKelamin", render: (v) => JK_LABELS[v] || v },
     { title: "Tgl Lahir", dataIndex: "tanggalLahir", render: (v) => v ? dayjs(v).format("DD/MM/YYYY") : "-" },
     { title: "SPPG", dataIndex: "sppgNama" },
     { title: "Provinsi", dataIndex: "sppgProvinsi" },
@@ -198,19 +243,30 @@ export default function LaporanPage() {
               onClick={(e) => {
                 setJenis(e.key);
                 setPreview(null);
+                setFilter((f) => ({ ...f, search: null, page: 1 }));
               }}
-              items={JENIS.map((j) => ({ key: j.key, label: j.label }))}
+              items={filteredJenis.map((j) => ({ key: j.key, label: j.label }))}
             />
           </Card>
         </Col>
         <Col xs={24} lg={18}>
           <Card title="Filter">
             <Space wrap style={{ width: "100%" }}>
-              <DatePicker.RangePicker
-                style={filterControlStyle(300)}
-                value={filter.periode}
-                onChange={(v) => setFilter((f) => ({ ...f, periode: v }))}
-              />
+              {jenis !== "penerima" && (
+                <DatePicker.RangePicker
+                  style={filterControlStyle(300)}
+                  value={filter.periode}
+                  onChange={(v) => setFilter((f) => ({ ...f, periode: v }))}
+                />
+              )}
+              {jenis === "penerima" && (
+                <Input.Search
+                  placeholder="Cari Nama / NIK"
+                  allowClear
+                  style={filterControlStyle(240)}
+                  onSearch={(v) => setFilter((f) => ({ ...f, search: v || null, page: 1 }))}
+                />
+              )}
               <Select
                 placeholder="Provinsi"
                 allowClear
@@ -218,6 +274,7 @@ export default function LaporanPage() {
                 value={filter.provinsi || undefined}
                 onChange={(v) => setFilter((f) => ({ ...f, provinsi: v || null }))}
                 options={provList.map((p) => ({ value: p.provinsi, label: p.provinsi }))}
+                disabled={hasRole("OPERATOR_SPPG")}
               />
               <Select
                 placeholder="SPPG"
@@ -228,20 +285,23 @@ export default function LaporanPage() {
                 onChange={(v) => setFilter((f) => ({ ...f, sppgId: v || null }))}
                 options={sppgOptions.map((s) => ({ value: s.id, label: s.namaSppg }))}
                 filterOption={(input, option) => (option.label || "").toLowerCase().includes(input.toLowerCase())}
+                disabled={hasRole("OPERATOR_SPPG")}
               />
-              <Select
-                placeholder="Kategori"
-                allowClear
-                style={filterControlStyle(200)}
-                value={filter.kategori || undefined}
-                onChange={(v) => setFilter((f) => ({ ...f, kategori: v || null }))}
-                options={[
-                  { value: "PESERTA_DIDIK", label: "Peserta Didik" },
-                  { value: "BALITA", label: "Balita" },
-                  { value: "IBU_HAMIL", label: "Ibu Hamil" },
-                  { value: "IBU_MENYUSUI", label: "Ibu Menyusui" },
-                ]}
-              />
+              {jenis !== "distribusi" && (
+                <Select
+                  placeholder="Kategori"
+                  allowClear
+                  style={filterControlStyle(200)}
+                  value={filter.kategori || undefined}
+                  onChange={(v) => setFilter((f) => ({ ...f, kategori: v || null }))}
+                  options={[
+                    { value: "PESERTA_DIDIK", label: "Peserta Didik" },
+                    { value: "BALITA", label: "Balita" },
+                    { value: "IBU_HAMIL", label: "Ibu Hamil" },
+                    { value: "IBU_MENYUSUI", label: "Ibu Menyusui" },
+                  ]}
+                />
+              )}
               <Button icon={<ReloadOutlined />} onClick={onPreview} loading={loading}>
                 Pratinjau
               </Button>

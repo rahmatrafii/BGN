@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   Row,
   Col,
@@ -16,6 +16,7 @@ import {
   Grid,
   theme as antdTheme,
   Tooltip,
+  message,
 } from "antd";
 import {
   TeamOutlined,
@@ -110,7 +111,9 @@ export default function DashboardPage() {
         dashApi.getDistribusiKategori(),
         dashApi.getAlert(),
       ]);
-      const publik = await publicDataApi.getRingkasanPublik(dayjs().year());
+      const sppgs = sb.data || [];
+      const provinsiFilter = hasRole("OPERATOR_SPPG") ? sppgs[0]?.provinsi : undefined;
+      const publik = await publicDataApi.getRingkasanPublik(dayjs().year(), provinsiFilter);
       const realtime = await publicDataApi.getRealtimeSummary();
       setStat(s.data);
       setTren(t.data);
@@ -257,31 +260,6 @@ export default function DashboardPage() {
     }
   };
 
-  const onBackfillSppg = async () => {
-    setBackfillSppgLoading(true);
-    setError(null);
-    try {
-      const r = await publicDataApi.backfill30d(30);
-      const data = r && r.data;
-      if (data) {
-        setLastSyncSummary({
-          jenis: "sppg_backfill",
-          ok: data.ok,
-          totalMs: data.totalMs,
-          steps: data.steps,
-          trigger: data.trigger,
-        });
-      }
-      await fetchAll();
-    } catch (err) {
-      const code = err.response && err.response.status;
-      const msg = (err.response && err.response.data && err.response.data.message) || "Backfill SPPG gagal";
-      setError(code === 401 || code === 403 ? msg + " (perlu login ulang?)" : msg);
-    } finally {
-      setBackfillSppgLoading(false);
-    }
-  };
-
   const onBackfill30d = async () => {
     setBackfill30dLoading(true);
     setError(null);
@@ -365,31 +343,6 @@ export default function DashboardPage() {
     }
   };
 
-  const onBackfillRealistic = async () => {
-    setBackfillRealisticLoading(true);
-    setError(null);
-    try {
-      const r = await publicDataApi.backfill30d(30);
-      const data = r && r.data;
-      if (data) {
-        setLastSyncSummary({
-          jenis: "backfill_realistic",
-          ok: data.ok,
-          backfillDays: data.backfillDays,
-          totalMs: data.totalMs,
-          steps: data.steps,
-          trigger: data.trigger,
-        });
-      }
-      await fetchAll();
-    } catch (err) {
-      const code = err.response && err.response.status;
-      const msg = (err.response && err.response.data && err.response.data.message) || "Backfill realistic gagal";
-      setError(code === 401 || code === 403 ? msg + " (perlu login ulang?)" : msg);
-    } finally {
-      setBackfillRealisticLoading(false);
-    }
-  };
 
   return (
     <div ref={containerRef}>
@@ -427,24 +380,26 @@ export default function DashboardPage() {
                 >
                   Trigger Cron (Semua)
                 </Button>
-                <Button
-                  type="primary"
-                  ghost
-                  icon={<SyncOutlined spin={backfill30dLoading} />}
-                  onClick={onBackfill30d}
-                  loading={backfill30dLoading}
-                >
-                  Backfill 30 Hari
-                </Button>
                 {hasRole("ADMIN") ? (
-                  <Button
-                    danger
-                    icon={<SyncOutlined spin={resetLoading} />}
-                    onClick={onReset}
-                    loading={resetLoading}
-                  >
-                    Reset Data Dummy
-                  </Button>
+                  <>
+                    <Button
+                      type="primary"
+                      ghost
+                      icon={<SyncOutlined spin={backfill30dLoading} />}
+                      onClick={onBackfill30d}
+                      loading={backfill30dLoading}
+                    >
+                      Backfill 30 Hari
+                    </Button>
+                    <Button
+                      danger
+                      icon={<SyncOutlined spin={resetLoading} />}
+                      onClick={onReset}
+                      loading={resetLoading}
+                    >
+                      Reset Data Dummy
+                    </Button>
+                  </>
                 ) : null}
               </>
             ) : null}
@@ -672,7 +627,15 @@ export default function DashboardPage() {
             <Col xs={24} lg={14}>
               <Card title="Sebaran SPPG" bodyStyle={{ padding: 0 }}>
                 <div style={{ height: mapHeight }}>
-                  <MapContainer center={[-2.5, 118]} zoom={5} style={{ height: "100%", width: "100%" }}>
+                  <MapContainer
+                    center={
+                      hasRole("OPERATOR_SPPG") && sebaran[0]?.latitude && sebaran[0]?.longitude
+                        ? [sebaran[0].latitude, sebaran[0].longitude]
+                        : [-2.5, 118]
+                    }
+                    zoom={hasRole("OPERATOR_SPPG") && sebaran[0]?.latitude ? 11 : 5}
+                    style={{ height: "100%", width: "100%" }}
+                  >
                     <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                     {sebaran
                       .filter((s) => s.latitude && s.longitude)
@@ -723,6 +686,26 @@ export default function DashboardPage() {
                   </div>
                 ) : null}
 
+                {(alert.sppgRealisasiRendah || []).length > 0 ? (
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontWeight: 600, marginBottom: 6 }}>SPPG dengan realisasi rendah (&lt; 80% kapasitas)</div>
+                    <List
+                      size="small"
+                      dataSource={alert.sppgRealisasiRendah.slice(0, 5)}
+                      renderItem={(s) => (
+                        <List.Item style={{ background: token.colorWarningBg, borderRadius: 6, padding: 8 }}>
+                          <div className="dashboard-split-row">
+                            <Tooltip title={`${s.namaSppg} - Kapasitas: ${s.kapasitasPorsiPerHari} porsi/hari`}>
+                              <span className="left text-clamp-1">{s.namaSppg}</span>
+                            </Tooltip>
+                            <Tag color="volcano" className="right">{s.provinsi}</Tag>
+                          </div>
+                        </List.Item>
+                      )}
+                    />
+                  </div>
+                ) : null}
+
                 {(alert.penerimaGiziBermasalah || []).length > 0 ? (
                   <div>
                     <div style={{ fontWeight: 600, marginBottom: 6 }}>Penerima dengan status gizi bermasalah</div>
@@ -748,7 +731,9 @@ export default function DashboardPage() {
                   </div>
                 ) : null}
 
-                {(alert.sppgBelumLapor || []).length === 0 && (alert.penerimaGiziBermasalah || []).length === 0 ? (
+                {(alert.sppgBelumLapor || []).length === 0 &&
+                (alert.sppgRealisasiRendah || []).length === 0 &&
+                (alert.penerimaGiziBermasalah || []).length === 0 ? (
                   <Empty description="Tidak ada alert" />
                 ) : null}
               </Card>

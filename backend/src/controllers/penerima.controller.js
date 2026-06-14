@@ -44,7 +44,23 @@ async function listPenerima(req, res, next) {
     };
 
     if (req.query.kategori) where.kategori = req.query.kategori;
-    if (req.query.sppgId) where.sppgId = req.query.sppgId;
+
+    if (req.query.sppgId) {
+      if (sppgFilter.sppgId && req.query.sppgId !== sppgFilter.sppgId) {
+        throw new HttpError(403, "Anda hanya boleh mengakses data SPPG sendiri", "FORBIDDEN");
+      }
+      if (user.peran === "PENGAWAS_GIZI") {
+        const targetSppg = await prisma.sppg.findUnique({
+          where: { id: req.query.sppgId },
+          select: { provinsi: true },
+        });
+        if (!targetSppg || targetSppg.provinsi !== user.wilayahZona) {
+          throw new HttpError(403, "SPPG di luar wilayah zona pengawasan Anda", "FORBIDDEN");
+        }
+      }
+      where.sppgId = req.query.sppgId;
+    }
+
     if (req.query.statusAktif === "true") where.statusAktif = true;
     if (req.query.statusAktif === "false") where.statusAktif = false;
 
@@ -60,12 +76,23 @@ async function listPenerima(req, res, next) {
       where.OR = ors;
     }
 
+    // --- Dynamic orderBy ---
+    const ALLOWED_SORT_FIELDS = ["namaLengkap", "createdAt", "kategori"];
+    let sortField = "createdAt";
+    let sortDir = "desc";
+    if (req.query.sortBy && ALLOWED_SORT_FIELDS.includes(req.query.sortBy)) {
+      sortField = req.query.sortBy;
+    }
+    if (req.query.sortOrder === "asc" || req.query.sortOrder === "desc") {
+      sortDir = req.query.sortOrder;
+    }
+
     const [data, total] = await Promise.all([
       prisma.penerimaManfaat.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy: { [sortField]: sortDir },
         include: {
           sppg: { select: { id: true, namaSppg: true, provinsi: true } },
           pemantauanGizi: {
@@ -126,6 +153,18 @@ async function detailPenerima(req, res, next) {
     });
     if (!p) throw new HttpError(404, "Penerima manfaat tidak ditemukan", "NOT_FOUND");
 
+    const riwayatDistribusi = await prisma.distribusiMbg.findMany({
+      where: { sppgId: p.sppgId },
+      orderBy: { tanggalDistribusi: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        tanggalDistribusi: true,
+        totalPorsi: true,
+        status: true,
+      },
+    });
+
     const usia = hitungUsia(p.tanggalLahir);
     return sukses(res, {
       id: p.id,
@@ -140,6 +179,7 @@ async function detailPenerima(req, res, next) {
       statusAktif: p.statusAktif,
       usia,
       pemantauanGizi: p.pemantauanGizi,
+      riwayatDistribusi,
     });
   } catch (err) {
     next(err);
@@ -180,6 +220,18 @@ async function buatPenerima(req, res, next) {
     const jenisKelamin = req.body.jenisKelamin;
     if (!["LAKI_LAKI", "PEREMPUAN"].includes(jenisKelamin)) {
       throw new HttpError(422, "Jenis kelamin tidak valid", "VALIDATION_ERROR");
+    }
+
+    if (["IBU_HAMIL", "IBU_MENYUSUI"].includes(kategori) && jenisKelamin !== "PEREMPUAN") {
+      throw new HttpError(422, "Kategori Ibu Hamil atau Menyusui harus berjenis kelamin Perempuan", "VALIDATION_ERROR");
+    }
+
+    const hash = hashIndex(nik);
+    const existing = await prisma.penerimaManfaat.findFirst({
+      where: { nikHash: hash, sppgId },
+    });
+    if (existing) {
+      throw new HttpError(409, "NIK sudah terdaftar di SPPG ini", "DUPLICATE_NIK");
     }
 
     const created = await prisma.penerimaManfaat.create({
@@ -223,22 +275,55 @@ async function updatePenerima(req, res, next) {
 
     const data = {};
     if (req.body.namaLengkap !== undefined) data.namaLengkap = sanitizeString(req.body.namaLengkap, { maxLength: 150 });
-    if (req.body.tanggalLahir) data.tanggalLahir = new Date(req.body.tanggalLahir);
-    if (req.body.jenisKelamin) data.jenisKelamin = req.body.jenisKelamin;
-    if (req.body.kategori) data.kategori = req.body.kategori;
+    if (req.body.tanggalLahir) {
+      data.tanggalLahir = new Date(req.body.tanggalLahir);
+      if (Number.isNaN(data.tanggalLahir.getTime()) || data.tanggalLahir > new Date()) {
+        throw new HttpError(422, "Tanggal lahir tidak valid atau berada di masa depan", "VALIDATION_ERROR");
+      }
+    }
+    if (req.body.jenisKelamin) {
+      if (!["LAKI_LAKI", "PEREMPUAN"].includes(req.body.jenisKelamin)) {
+        throw new HttpError(422, "Jenis kelamin tidak valid", "VALIDATION_ERROR");
+      }
+      data.jenisKelamin = req.body.jenisKelamin;
+    }
+    if (req.body.kategori) {
+      if (!["PESERTA_DIDIK", "BALITA", "IBU_HAMIL", "IBU_MENYUSUI"].includes(req.body.kategori)) {
+        throw new HttpError(422, "Kategori tidak valid", "VALIDATION_ERROR");
+      }
+      data.kategori = req.body.kategori;
+    }
     if (req.body.satuanPendidikan !== undefined) data.satuanPendidikan = sanitizeString(req.body.satuanPendidikan, { maxLength: 150 });
 
-    if (data.tanggalLahir && data.kategori) {
-      const u = hitungUsia(data.tanggalLahir);
-      const errKat = validateKategoriUsia(data.kategori, u.usiaBulan);
+    const finalKategori = data.kategori || existing.kategori;
+    const finalJenisKelamin = data.jenisKelamin || existing.jenisKelamin;
+    if (["IBU_HAMIL", "IBU_MENYUSUI"].includes(finalKategori) && finalJenisKelamin !== "PEREMPUAN") {
+      throw new HttpError(422, "Kategori Ibu Hamil atau Menyusui harus berjenis kelamin Perempuan", "VALIDATION_ERROR");
+    }
+
+    if (data.tanggalLahir !== undefined || data.kategori !== undefined) {
+      const finalTanggalLahir = data.tanggalLahir || existing.tanggalLahir;
+      const u = hitungUsia(finalTanggalLahir);
+      const errKat = validateKategoriUsia(finalKategori, u.usiaBulan);
       if (errKat) throw new HttpError(422, errKat, "VALIDATION_ERROR");
     }
 
     if (req.body.nik) {
       const nik = safeNik(req.body.nik);
       if (!nik || nik.length !== 16) throw new HttpError(422, "NIK harus 16 digit", "VALIDATION_ERROR");
+      const hash = hashIndex(nik);
+      const existingNik = await prisma.penerimaManfaat.findFirst({
+        where: {
+          nikHash: hash,
+          sppgId: existing.sppgId,
+          id: { not: id },
+        },
+      });
+      if (existingNik) {
+        throw new HttpError(409, "NIK sudah terdaftar di SPPG ini", "DUPLICATE_NIK");
+      }
       data.nikEnc = encryptText(nik);
-      data.nikHash = hashIndex(nik);
+      data.nikHash = hash;
       data.nikMasked = maskNik(nik);
     }
 
@@ -374,9 +459,23 @@ async function importExcel(req, res, next) {
         if (!["LAKI_LAKI", "PEREMPUAN"].includes(jk)) throw new Error("Jenis Kelamin tidak valid");
         if (!["PESERTA_DIDIK", "BALITA", "IBU_HAMIL", "IBU_MENYUSUI"].includes(kategori)) throw new Error("Kategori tidak valid");
 
+        if (["IBU_HAMIL", "IBU_MENYUSUI"].includes(kategori) && jk !== "PEREMPUAN") {
+          throw new Error("Kategori Ibu Hamil atau Menyusui harus berjenis kelamin Perempuan");
+        }
+
+        if (Number.isNaN(tanggal.getTime()) || tanggal > new Date()) {
+          throw new Error("Tanggal lahir tidak valid atau berada di masa depan");
+        }
+
         const usia = hitungUsia(tanggal);
         const errKat = validateKategoriUsia(kategori, usia.usiaBulan);
         if (errKat) throw new Error(errKat);
+
+        const hash = hashIndex(nik);
+        const existing = await prisma.penerimaManfaat.findFirst({
+          where: { nikHash: hash, sppgId },
+        });
+        if (existing) throw new Error("NIK sudah terdaftar di SPPG ini");
 
         await prisma.penerimaManfaat.create({
           data: {
@@ -404,13 +503,82 @@ async function importExcel(req, res, next) {
   }
 }
 
+async function listSatuanPendidikan(req, res, next) {
+  try {
+    const user = req.user;
+    const sppgFilter = buildSppgFilter(user);
+    const where = {
+      statusAktif: true,
+      satuanPendidikan: { not: null },
+      ...(sppgFilter.sppgId ? { sppgId: sppgFilter.sppgId } : {}),
+      ...(sppgFilter.sppg ? { sppg: sppgFilter.sppg } : {}),
+    };
+
+    if (req.query.sppgId) {
+      if (sppgFilter.sppgId && req.query.sppgId !== sppgFilter.sppgId) {
+        throw new HttpError(403, "Anda hanya boleh mengakses data SPPG sendiri", "FORBIDDEN");
+      }
+      if (user.peran === "PENGAWAS_GIZI") {
+        const targetSppg = await prisma.sppg.findUnique({
+          where: { id: req.query.sppgId },
+          select: { provinsi: true },
+        });
+        if (!targetSppg || targetSppg.provinsi !== user.wilayahZona) {
+          throw new HttpError(403, "SPPG di luar wilayah zona pengawasan Anda", "FORBIDDEN");
+        }
+      }
+      where.sppgId = req.query.sppgId;
+    }
+
+    const data = await prisma.penerimaManfaat.findMany({
+      where,
+      distinct: ["satuanPendidikan"],
+      select: {
+        satuanPendidikan: true,
+      },
+      orderBy: {
+        satuanPendidikan: "asc",
+      },
+    });
+
+    const items = data
+      .map((p) => p.satuanPendidikan)
+      .filter((v) => v && v.trim() !== "");
+
+    return sukses(res, items, "OK", 200);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function aktifkanPenerima(req, res, next) {
+  try {
+    const id = req.params.id;
+    const existing = await prisma.penerimaManfaat.findUnique({ where: { id } });
+    if (!existing) throw new HttpError(404, "Penerima manfaat tidak ditemukan", "NOT_FOUND");
+
+    if (req.user.peran === "OPERATOR_SPPG" && existing.sppgId !== req.user.sppgId) {
+      throw new HttpError(403, "Anda hanya boleh mengaktifkan data SPPG sendiri", "FORBIDDEN");
+    }
+
+    await prisma.penerimaManfaat.update({ where: { id }, data: { statusAktif: true } });
+    await catatAudit({ tabel: "penerima_manfaat", recordId: id, aksi: "UPDATE", dataBaru: { statusAktif: true }, req });
+    invalidatePrefix("dashboard:");
+    return sukses(res, null, "Penerima manfaat diaktifkan kembali");
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   listPenerima,
   detailPenerima,
   buatPenerima,
   updatePenerima,
   nonaktifkanPenerima,
+  aktifkanPenerima,
   templateExcel,
   importExcel,
+  listSatuanPendidikan,
   hitungUsia,
 };

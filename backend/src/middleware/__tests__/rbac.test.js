@@ -84,4 +84,26 @@ describe("requireSppgAccess", () => {
     );
     expect(res.status).toHaveBeenCalledWith(403);
   });
+
+  test("OPERATOR akses SPPG sendiri via baseUrl /api/sppg dan params.id -> lolos", async () => {
+    const next = jest.fn();
+    await requireSppgAccess(
+      { user: { peran: "OPERATOR_SPPG", sppgId: "sp1" }, baseUrl: "/api/sppg", params: { id: "sp1" }, body: {}, query: {} },
+      mockRes(),
+      next
+    );
+    expect(next).toHaveBeenCalled();
+  });
+
+  test("OPERATOR akses SPPG lain via baseUrl /api/sppg dan params.id -> 403", async () => {
+    const next = jest.fn();
+    const res = mockRes();
+    await requireSppgAccess(
+      { user: { peran: "OPERATOR_SPPG", sppgId: "sp1" }, baseUrl: "/api/sppg", params: { id: "sp2" }, body: {}, query: {} },
+      res,
+      next
+    );
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(next).not.toHaveBeenCalled();
+  });
 });

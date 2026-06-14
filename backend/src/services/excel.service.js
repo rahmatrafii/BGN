@@ -153,6 +153,7 @@ async function generateLaporanStatusGizi({ rows, filter }) {
     { header: "LILA (cm)", width: 10 },
     { header: "Z BB/U", width: 10 },
     { header: "Z TB/U", width: 10 },
+    { header: "Z BB/TB", width: 10 },
     { header: "Status Gizi", width: 14 },
     { header: "Stunting", width: 10 },
   ];
@@ -173,10 +174,11 @@ async function generateLaporanStatusGizi({ rows, filter }) {
     "LILA (cm)",
     "Z BB/U",
     "Z TB/U",
+    "Z BB/TB",
     "Status Gizi",
     "Stunting",
   ]);
-  applyHeaderRow(ws, headerRow.number, 12);
+  applyHeaderRow(ws, headerRow.number, 13);
   ws.views = [{ state: "frozen", ySplit: headerRow.number }];
 
   for (const r of rows) {
@@ -191,10 +193,11 @@ async function generateLaporanStatusGizi({ rows, filter }) {
       r.lilaCm !== null && r.lilaCm !== undefined ? Number(r.lilaCm) : "",
       r.zscoreBbU !== null && r.zscoreBbU !== undefined ? Number(r.zscoreBbU) : "",
       r.zscoreTbU !== null && r.zscoreTbU !== undefined ? Number(r.zscoreTbU) : "",
+      r.zscoreBbTb !== null && r.zscoreBbTb !== undefined ? Number(r.zscoreBbTb) : "",
       r.statusGizi,
       r.stunting ? "Ya" : "Tidak",
     ]);
-    [6, 7, 8, 9, 10].forEach((c) => (row.getCell(c).numFmt = "#,##0.00"));
+    [6, 7, 8, 9, 10, 11].forEach((c) => (row.getCell(c).numFmt = "#,##0.00"));
     row.eachCell((c) => (c.border = BORDER_THIN));
     if (r.statusGizi === "GIZI_BURUK") {
       row.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFE0E0" } };

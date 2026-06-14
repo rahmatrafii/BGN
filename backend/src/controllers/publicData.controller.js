@@ -9,8 +9,12 @@ const { runDailyDummyNutrition } = require("../services/dummyNutrition.service")
 async function getRingkasanPublik(req, res, next) {
   try {
     const tahun = parseInt(req.query.tahun, 10) || new Date().getFullYear();
+    const provinsi = req.query.provinsi;
     const data = await prisma.indikatorPublik.findMany({
-      where: { tahun },
+      where: {
+        tahun,
+        ...(provinsi ? { namaWilayah: { contains: provinsi, mode: "insensitive" } } : {}),
+      },
       include: {
         sumber: {
           select: {

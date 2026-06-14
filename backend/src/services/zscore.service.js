@@ -49,8 +49,15 @@ function round2(n) {
   return Math.round(n * 100) / 100;
 }
 
-function hitungZScore({ beratBadanKg, tinggiBadanCm, usiaBulan, jenisKelamin }) {
+function hitungZScore({ beratBadanKg, tinggiBadanCm, usiaBulan, jenisKelamin, kategori }) {
   const out = { zscoreBbU: null, zscoreTbU: null, zscoreBbTb: null };
+
+  if (kategori === "IBU_HAMIL" || kategori === "IBU_MENYUSUI") {
+    return out;
+  }
+  if (kategori === "PESERTA_DIDIK" && usiaBulan > 60) {
+    return out;
+  }
 
   if (Number.isFinite(beratBadanKg) && Number.isFinite(usiaBulan)) {
     const tab = pickTable("wfa", jenisKelamin);
@@ -75,8 +82,31 @@ function hitungZScore({ beratBadanKg, tinggiBadanCm, usiaBulan, jenisKelamin }) 
   return out;
 }
 
-function klasifikasiStatusGizi({ zscoreBbU, zscoreTbU, zscoreBbTb }) {
+function klasifikasiStatusGizi(z, { kategori, lilaCm, beratBadanKg, tinggiBadanCm, usiaBulan } = {}) {
+  if (kategori === "IBU_HAMIL" || kategori === "IBU_MENYUSUI") {
+    let statusGizi = "GIZI_BAIK";
+    if (lilaCm !== null && lilaCm !== undefined) {
+      statusGizi = Number(lilaCm) < 23.5 ? "GIZI_KURANG" : "GIZI_BAIK";
+    }
+    return { statusGizi, stunting: false };
+  }
+
+  if (kategori === "PESERTA_DIDIK" && usiaBulan > 60) {
+    let statusGizi = "GIZI_BAIK";
+    if (beratBadanKg && tinggiBadanCm) {
+      const tbMeter = Number(tinggiBadanCm) / 100;
+      const bmi = Number(beratBadanKg) / (tbMeter * tbMeter);
+      if (bmi < 18.5) statusGizi = "GIZI_KURANG";
+      else if (bmi > 25.0) statusGizi = "GIZI_LEBIH";
+    }
+    return { statusGizi, stunting: false };
+  }
+
   let statusGizi = "GIZI_BAIK";
+  const zscoreBbU = z.zscoreBbU;
+  const zscoreBbTb = z.zscoreBbTb;
+  const zscoreTbU = z.zscoreTbU;
+
   if (Number.isFinite(zscoreBbU)) {
     if (zscoreBbU < -3) statusGizi = "GIZI_BURUK";
     else if (zscoreBbU < -2) statusGizi = "GIZI_KURANG";

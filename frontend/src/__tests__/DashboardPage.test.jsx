@@ -4,6 +4,22 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { ConfigProvider, App as AntApp } from "antd";
 
+beforeAll(() => {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: jest.fn().mockImplementation((query) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(), // deprecated
+      removeListener: jest.fn(), // deprecated
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  });
+});
+
 jest.mock("recharts", () => ({
   ResponsiveContainer: ({ children }) => <div data-testid="responsive-container">{children}</div>,
   AreaChart: ({ children }) => <div>{children}</div>,
@@ -26,6 +42,12 @@ jest.mock("react-leaflet", () => ({
 }));
 
 jest.mock("html2canvas", () => () => ({ toDataURL: () => "data:image/png;base64,abc" }));
+
+jest.mock("../api/publicData.api", () => ({
+  getRingkasanPublik: jest.fn().mockResolvedValue({ data: [] }),
+  getRealtimeSummary: jest.fn().mockResolvedValue({ data: null }),
+  createRealtimeStream: jest.fn().mockReturnValue({ close: jest.fn() }),
+}));
 
 jest.mock("../api/dashboard.api", () => ({
   getStatistik: jest.fn(),

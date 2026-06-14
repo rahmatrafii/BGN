@@ -15,6 +15,9 @@ router.get("/alert-belum-lapor", ctrl.alertBelumLapor);
 
 router.get("/", ctrl.listDistribusi);
 router.post("/", requireRole("OPERATOR_SPPG", "ASISTEN_LAPANGAN", "ADMIN"), ctrl.buatDistribusi);
+router.get("/:id", requireRole("ADMIN", "PEJABAT_BGN", "PENGAWAS_GIZI", "OPERATOR_SPPG", "ASISTEN_LAPANGAN"), ctrl.detailDistribusi);
+router.put("/:id", requireRole("ADMIN", "OPERATOR_SPPG", "ASISTEN_LAPANGAN"), ctrl.updateDistribusi);
+router.delete("/:id", requireRole("ADMIN", "OPERATOR_SPPG", "ASISTEN_LAPANGAN"), ctrl.hapusDistribusi);
 router.post(
   "/:id/upload-bukti",
   requireRole("OPERATOR_SPPG", "ASISTEN_LAPANGAN", "ADMIN"),

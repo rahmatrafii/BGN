@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
 import {
   Table,
   Tag,
@@ -24,6 +25,7 @@ import {
   EditOutlined,
   StopOutlined,
   InboxOutlined,
+  CheckCircleOutlined,
 } from "@ant-design/icons";
 
 import PageHeader from "../components/layout/PageHeader";
@@ -52,6 +54,8 @@ export default function PenerimaListPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [sortInfo, setSortInfo] = useState({ field: undefined, order: undefined });
+  const [searchValue, setSearchValue] = useState("");
 
   const showSppgFilter = hasRole("ADMIN", "PENGAWAS_GIZI", "PEJABAT_BGN");
 
@@ -65,6 +69,8 @@ export default function PenerimaListPage() {
         kategori: filter.kategori || undefined,
         sppgId: filter.sppgId || undefined,
         statusAktif: filter.statusAktif || undefined,
+        sortBy: override.sortBy || sortInfo.field || undefined,
+        sortOrder: override.sortOrder || sortInfo.order || undefined,
       });
       setData(r.data || []);
       setPagination((p) => ({ ...p, total: (r.pagination && r.pagination.total) || 0 }));
@@ -79,7 +85,7 @@ export default function PenerimaListPage() {
     fetchData({ page: 1 });
     setPagination((p) => ({ ...p, current: 1 }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter.kategori, filter.sppgId, filter.statusAktif]);
+  }, [filter.search, filter.kategori, filter.sppgId, filter.statusAktif]);
 
   useEffect(() => {
     if (showSppgFilter) {
@@ -91,15 +97,15 @@ export default function PenerimaListPage() {
     if (searchTimer) clearTimeout(searchTimer);
     const t = setTimeout(() => {
       setFilter((f) => ({ ...f, search: val }));
-      fetchData({ page: 1 });
-      setPagination((p) => ({ ...p, current: 1 }));
     }, 300);
     setSearchTimer(t);
   };
 
   const onResetFilter = () => {
+    if (searchTimer) clearTimeout(searchTimer);
+    setSearchValue("");
     setFilter({ search: "", kategori: "", sppgId: "", statusAktif: "" });
-    setTimeout(() => fetchData({ page: 1 }), 0);
+    setSortInfo({ field: undefined, order: undefined });
   };
 
   const onNonaktif = (record) => {
@@ -116,6 +122,25 @@ export default function PenerimaListPage() {
           fetchData();
         } catch (err) {
           message.error((err.response && err.response.data && err.response.data.message) || "Gagal");
+        }
+      },
+    });
+  };
+
+  const onAktifkan = (record) => {
+    modal.confirm({
+      title: "Aktifkan kembali penerima",
+      content: `Anda yakin mengaktifkan kembali ${record.namaLengkap}?`,
+      okText: "Ya, aktifkan",
+      okButtonProps: { type: "primary" },
+      cancelText: "Batal",
+      onOk: async () => {
+        try {
+          await penerimaApi.aktifkan(record.id);
+          message.success("Penerima diaktifkan kembali");
+          fetchData();
+        } catch (err) {
+          message.error((err.response && err.response.data && err.response.data.message) || "Gagal mengaktifkan");
         }
       },
     });
@@ -165,7 +190,7 @@ export default function PenerimaListPage() {
         dataIndex: "nikMasked",
         render: (v) => <span style={{ fontFamily: "monospace" }}>{v}</span>,
       },
-      { title: "Nama Lengkap", dataIndex: "namaLengkap", sorter: true },
+      { title: "Nama Lengkap", dataIndex: "namaLengkap", key: "namaLengkap", sorter: true },
       {
         title: "Kategori",
         dataIndex: "kategori",
@@ -194,14 +219,21 @@ export default function PenerimaListPage() {
       render: (r) => (
         <Space wrap size={6}>
           <Button size="small" icon={<EyeOutlined />} onClick={() => navigate(`/penerima/${r.id}`)} title="Lihat detail">
-            {isMobile ? "Lihat" : "Lihat"}
+            Lihat
           </Button>
-          <Button size="small" icon={<EditOutlined />} onClick={() => navigate(`/penerima/${r.id}/edit`)} title="Ubah data">
-            Edit
-          </Button>
-          {r.statusAktif ? (
+          {hasRole("ADMIN", "OPERATOR_SPPG") && (
+            <Button size="small" icon={<EditOutlined />} onClick={() => navigate(`/penerima/${r.id}/edit`)} title="Ubah data">
+              Edit
+            </Button>
+          )}
+          {hasRole("ADMIN", "OPERATOR_SPPG") && r.statusAktif ? (
             <Button size="small" danger icon={<StopOutlined />} onClick={() => onNonaktif(r)}>
               Nonaktifkan
+            </Button>
+          ) : null}
+          {hasRole("ADMIN", "OPERATOR_SPPG") && !r.statusAktif ? (
+            <Button size="small" icon={<CheckCircleOutlined />} style={{ color: "#16a34a", borderColor: "#16a34a" }} onClick={() => onAktifkan(r)}>
+              Aktifkan
             </Button>
           ) : null}
         </Space>
@@ -209,7 +241,7 @@ export default function PenerimaListPage() {
     });
     return cols;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination, showSppgFilter, isMobile]);
+  }, [pagination, showSppgFilter, isMobile, hasRole]);
 
   return (
     <div>
@@ -259,7 +291,16 @@ export default function PenerimaListPage() {
           <Input.Search
             placeholder="Cari NIK / Nama"
             allowClear
-            onChange={(e) => onSearch(e.target.value)}
+            value={searchValue}
+            onChange={(e) => {
+              setSearchValue(e.target.value);
+              onSearch(e.target.value);
+            }}
+            onSearch={(val) => {
+              setSearchValue(val);
+              if (searchTimer) clearTimeout(searchTimer);
+              setFilter((f) => ({ ...f, search: val }));
+            }}
             style={filterControlStyle(260)}
           />
           <Select
@@ -306,25 +347,35 @@ export default function PenerimaListPage() {
           dataSource={data}
           columns={columns}
           pagination={{
-            current: pagination.current,
-            pageSize: pagination.pageSize,
-            total: pagination.total,
-            size: isMobile ? "small" : "default",
-            showSizeChanger: !isMobile,
-            simple: isMobile,
-            showTotal: (t) => `Total ${t} data`,
-            onChange: (page, pageSize) => {
-              setPagination((p) => ({ ...p, current: page, pageSize }));
-              fetchData({ page, limit: pageSize });
-            },
-          }}
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          size: isMobile ? "small" : "default",
+          showSizeChanger: !isMobile,
+          simple: isMobile,
+          showTotal: (t) => `Total ${t} data`,
+        }}
+        onChange={(pag, _filters, sorter) => {
+          const newSort = {
+            field: sorter.order ? sorter.field : undefined,
+            order: sorter.order === "ascend" ? "asc" : sorter.order === "descend" ? "desc" : undefined,
+          };
+          setSortInfo(newSort);
+          setPagination((p) => ({ ...p, current: pag.current, pageSize: pag.pageSize }));
+          fetchData({
+            page: pag.current,
+            limit: pag.pageSize,
+            sortBy: newSort.field,
+            sortOrder: newSort.order,
+          });
+        }}
           size={isMobile ? "small" : "middle"}
           scroll={{ x: isMobile ? 860 : 1200 }}
           expandable={{
             expandedRowRender: (record) =>
               record.tanggalPengukuranTerakhir ? (
                 <Typography.Text type="secondary">
-                  Pengukuran terakhir: {record.tanggalPengukuranTerakhir} — Status: {record.statusGiziTerakhir}
+                  Pengukuran terakhir: {dayjs(record.tanggalPengukuranTerakhir).format("DD MMM YYYY")} — Status: {record.statusGiziTerakhir}
                 </Typography.Text>
               ) : (
                 <Typography.Text type="secondary">Belum ada pengukuran gizi</Typography.Text>

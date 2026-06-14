@@ -1,11 +1,20 @@
 "use strict";
 
 const dayjs = require("dayjs");
+const utc = require("dayjs/plugin/utc");
+dayjs.extend(utc);
 const { prisma } = require("../config/database");
 const { sukses } = require("../utils/response");
 const { buildSppgFilter } = require("../middleware/rbac");
 const { getOrSet } = require("../services/cache.service");
 const { rangeArray, startOfDay, endOfDay } = require("../utils/dateRange");
+const { HttpError } = require("../middleware/errorHandler");
+
+function validateBoundOperator(user) {
+  if ((user.peran === "OPERATOR_SPPG" || user.peran === "ASISTEN_LAPANGAN") && !user.sppgId) {
+    throw new HttpError(403, "Akun Anda belum terhubung dengan SPPG", "NO_SPPG_BINDING");
+  }
+}
 
 function cacheKey(prefix, user) {
   if (user.peran === "ADMIN" || user.peran === "PEJABAT_BGN") {
@@ -23,6 +32,7 @@ function cacheKey(prefix, user) {
 async function getStatistik(req, res, next) {
   try {
     const user = req.user;
+    validateBoundOperator(user);
     const filterSppg = buildSppgFilter(user);
     const today = startOfDay(new Date());
     const yest = startOfDay(dayjs().subtract(1, "day").toDate());
@@ -98,6 +108,7 @@ async function getStatistik(req, res, next) {
 async function getTrenDistribusi(req, res, next) {
   try {
     const user = req.user;
+    validateBoundOperator(user);
     const range = Math.min(365, Math.max(7, parseInt(req.query.range, 10) || 30));
     const filterSppg = buildSppgFilter(user);
     const data = await getOrSet(cacheKey("dashboard:tren:" + range, user), 300, async () => {
@@ -113,7 +124,7 @@ async function getTrenDistribusi(req, res, next) {
       });
       const map = new Map();
       for (const g of grouped) {
-        const key = dayjs(g.tanggalDistribusi).format("YYYY-MM-DD");
+        const key = dayjs(g.tanggalDistribusi).utc().format("YYYY-MM-DD");
         map.set(key, g._sum.totalPorsi || 0);
       }
       return rangeArray(range).map((tanggal) => ({
@@ -130,6 +141,7 @@ async function getTrenDistribusi(req, res, next) {
 async function getSebaranSppg(req, res, next) {
   try {
     const user = req.user;
+    validateBoundOperator(user);
     const filterSppg = buildSppgFilter(user);
     const data = await getOrSet(cacheKey("dashboard:sebaran", user), 300, async () => {
       // Window 2 hari (UTC + Jakarta) untuk toleransi timezone Vercel region iad1.
@@ -181,6 +193,7 @@ async function getSebaranSppg(req, res, next) {
 async function getDistribusiKategori(req, res, next) {
   try {
     const user = req.user;
+    validateBoundOperator(user);
     const filterSppg = buildSppgFilter(user);
     const data = await getOrSet(cacheKey("dashboard:kategori", user), 300, async () => {
       const grouped = await prisma.penerimaManfaat.groupBy({
@@ -205,6 +218,7 @@ async function getDistribusiKategori(req, res, next) {
 async function getAlert(req, res, next) {
   try {
     const user = req.user;
+    validateBoundOperator(user);
     const filterSppg = buildSppgFilter(user);
 
     const today = startOfDay(new Date());
@@ -230,13 +244,13 @@ async function getAlert(req, res, next) {
     const distRecent = await prisma.distribusiMbg.findMany({
       where: {
         sppgId: { in: sppgIds },
-        tanggalDistribusi: { gte: dayjs().subtract(3, "day").toDate(), lte: endOfDay(new Date()) },
+        tanggalDistribusi: { gte: startOfDay(dayjs().subtract(3, "day").toDate()), lte: endOfDay(new Date()) },
       },
       select: { sppgId: true, tanggalDistribusi: true, totalPorsi: true },
     });
     const distMap = new Map();
     for (const d of distRecent) {
-      const k = d.sppgId + "|" + dayjs(d.tanggalDistribusi).format("YYYY-MM-DD");
+      const k = d.sppgId + "|" + dayjs(d.tanggalDistribusi).utc().format("YYYY-MM-DD");
       distMap.set(k, d.totalPorsi);
     }
 

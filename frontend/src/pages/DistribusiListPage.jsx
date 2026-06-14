@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Table, Tag, Button, Space, App, DatePicker, Select, Grid } from "antd";
+import { Card, Table, Tag, Button, Space, App, DatePicker, Select, Grid, Popconfirm } from "antd";
 import { PlusOutlined, CheckCircleOutlined, AuditOutlined, FileImageOutlined, SyncOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
@@ -17,7 +17,7 @@ export default function DistribusiListPage() {
   const isMobile = !screens.md;
   const filterControlStyle = (desktopWidth) => ({ width: isMobile ? "100%" : desktopWidth, maxWidth: "100%" });
   const navigate = useNavigate();
-  const { hasRole } = useAuthStore();
+  const { user, hasRole } = useAuthStore();
   const { message } = App.useApp();
 
   const [data, setData] = useState([]);
@@ -73,6 +73,16 @@ export default function DistribusiListPage() {
     }
   };
 
+  const onHapus = async (record) => {
+    try {
+      await distApi.remove(record.id);
+      message.success("Distribusi dihapus");
+      fetchData();
+    } catch (err) {
+      message.error((err.response && err.response.data && err.response.data.message) || "Gagal menghapus");
+    }
+  };
+
   const onSyncScrape = async () => {
     setSyncLoading(true);
     try {
@@ -122,6 +132,25 @@ export default function DistribusiListPage() {
             <Button size="small" type="primary" icon={<AuditOutlined />} onClick={() => onAksi(r, "validasi")}>
               Validasi
             </Button>
+          ) : null}
+          {r.status === "DRAFT" && (hasRole("ADMIN") || (hasRole("OPERATOR_SPPG", "ASISTEN_LAPANGAN") && r.sppgId === user?.sppgId)) ? (
+            <>
+              <Button size="small" onClick={() => navigate(`/distribusi/${r.id}/edit`)}>
+                Edit
+              </Button>
+              <Popconfirm
+                title="Hapus data distribusi?"
+                description="Tindakan ini tidak dapat dibatalkan."
+                onConfirm={() => onHapus(r)}
+                okText="Ya, Hapus"
+                cancelText="Batal"
+                okButtonProps={{ danger: true }}
+              >
+                <Button size="small" danger>
+                  Hapus
+                </Button>
+              </Popconfirm>
+            </>
           ) : null}
         </Space>
       ),
