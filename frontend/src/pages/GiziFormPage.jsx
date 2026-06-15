@@ -25,6 +25,34 @@ import * as giziApi from "../api/gizi.api";
 
 const STATUS_COLOR = { GIZI_BURUK: "red", GIZI_KURANG: "gold", GIZI_BAIK: "green", GIZI_LEBIH: "orange" };
 
+const getBbuStatus = (z) => {
+  const numZ = z !== null && z !== undefined ? Number(z) : NaN;
+  if (isNaN(numZ)) return { label: "Tidak Dihitung", color: "default" };
+  if (numZ < -3) return { label: "Gizi Buruk (Sangat Underweight)", color: "red" };
+  if (numZ < -2) return { label: "Gizi Kurang (Underweight)", color: "gold" };
+  if (numZ > 2) return { label: "Gizi Lebih (Overweight)", color: "orange" };
+  return { label: "Gizi Baik (Normal)", color: "green" };
+};
+
+const getTbuStatus = (z) => {
+  const numZ = z !== null && z !== undefined ? Number(z) : NaN;
+  if (isNaN(numZ)) return { label: "Tidak Dihitung", color: "default" };
+  if (numZ < -3) return { label: "Sangat Pendek (Severely Stunted)", color: "red" };
+  if (numZ < -2) return { label: "Pendek (Stunted)", color: "volcano" };
+  if (numZ > 3) return { label: "Tinggi", color: "blue" };
+  return { label: "Tinggi Normal", color: "green" };
+};
+
+const getBbtbStatus = (z) => {
+  const numZ = z !== null && z !== undefined ? Number(z) : NaN;
+  if (isNaN(numZ)) return { label: "Tidak Dihitung", color: "default" };
+  if (numZ < -3) return { label: "Gizi Buruk (Severely Wasted)", color: "red" };
+  if (numZ < -2) return { label: "Gizi Kurang (Wasted)", color: "gold" };
+  if (numZ > 3) return { label: "Obesitas", color: "red" };
+  if (numZ > 2) return { label: "Gizi Lebih (Overweight)", color: "orange" };
+  return { label: "Gizi Baik (Normal)", color: "green" };
+};
+
 export default function GiziFormPage() {
   const navigate = useNavigate();
   const { message } = App.useApp();
@@ -193,28 +221,77 @@ export default function GiziFormPage() {
       ) : null}
 
       {step === 2 && hasil ? (
-        <Card>
-          <Row gutter={16}>
+        <Card title="Hasil Penilaian Tumbuh Kembang">
+          <Row gutter={[16, 16]}>
             <Col xs={24} md={8}>
-              <Statistic title="Z-Score BB/U" value={hasil.zscore.zscoreBbU !== null ? hasil.zscore.zscoreBbU : "-"} />
+              <Card size="small" bordered style={{ textAlign: "center", background: "#f8fafc", borderRadius: 8 }}>
+                <div style={{ color: "#64748b", fontSize: 13, fontWeight: 500, minHeight: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  Berat Badan menurut Umur (BB/U)
+                </div>
+                <div style={{ fontSize: 36, fontWeight: "bold", margin: "12px 0", color: "#1e293b" }}>
+                  {hasil.zscore.zscoreBbU !== null ? hasil.zscore.zscoreBbU : "-"}
+                </div>
+                <div style={{ minHeight: 32 }}>
+                  <Tag color={getBbuStatus(hasil.zscore.zscoreBbU).color} style={{ fontSize: 13, padding: "4px 12px", borderRadius: 4 }}>
+                    {getBbuStatus(hasil.zscore.zscoreBbU).label}
+                  </Tag>
+                </div>
+              </Card>
             </Col>
             <Col xs={24} md={8}>
-              <Statistic title="Z-Score TB/U" value={hasil.zscore.zscoreTbU !== null ? hasil.zscore.zscoreTbU : "-"} />
+              <Card size="small" bordered style={{ textAlign: "center", background: "#f8fafc", borderRadius: 8 }}>
+                <div style={{ color: "#64748b", fontSize: 13, fontWeight: 500, minHeight: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  Tinggi Badan menurut Umur (TB/U)
+                </div>
+                <div style={{ fontSize: 36, fontWeight: "bold", margin: "12px 0", color: "#1e293b" }}>
+                  {hasil.zscore.zscoreTbU !== null ? hasil.zscore.zscoreTbU : "-"}
+                </div>
+                <div style={{ minHeight: 32 }}>
+                  <Tag color={getTbuStatus(hasil.zscore.zscoreTbU).color} style={{ fontSize: 13, padding: "4px 12px", borderRadius: 4 }}>
+                    {getTbuStatus(hasil.zscore.zscoreTbU).label}
+                  </Tag>
+                </div>
+              </Card>
             </Col>
             <Col xs={24} md={8}>
-              <Statistic title="Z-Score BB/TB" value={hasil.zscore.zscoreBbTb !== null ? hasil.zscore.zscoreBbTb : "-"} />
+              <Card size="small" bordered style={{ textAlign: "center", background: "#f8fafc", borderRadius: 8 }}>
+                <div style={{ color: "#64748b", fontSize: 13, fontWeight: 500, minHeight: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  Berat Badan menurut Tinggi (BB/TB)
+                </div>
+                <div style={{ fontSize: 36, fontWeight: "bold", margin: "12px 0", color: "#1e293b" }}>
+                  {hasil.zscore.zscoreBbTb !== null ? hasil.zscore.zscoreBbTb : "-"}
+                </div>
+                <div style={{ minHeight: 32 }}>
+                  <Tag color={getBbtbStatus(hasil.zscore.zscoreBbTb).color} style={{ fontSize: 13, padding: "4px 12px", borderRadius: 4 }}>
+                    {getBbtbStatus(hasil.zscore.zscoreBbTb).label}
+                  </Tag>
+                </div>
+              </Card>
             </Col>
           </Row>
-          <div style={{ marginTop: 16 }}>
-            <Tag color={STATUS_COLOR[hasil.klasifikasi.statusGizi]} style={{ fontSize: 18, padding: "6px 14px" }}>
-              {hasil.klasifikasi.statusGizi.replace("_", " ")}
-            </Tag>
-            {hasil.klasifikasi.stunting ? (
-              <Tag color="red" style={{ fontSize: 18, padding: "6px 14px", marginLeft: 8 }}>
-                STUNTING TERDETEKSI
-              </Tag>
-            ) : null}
-          </div>
+
+          <Alert
+            message="Panduan Membaca Indikator Pertumbuhan (WHO)"
+            type="info"
+            showIcon
+            style={{ marginTop: 20 }}
+            description={
+              <div style={{ fontSize: 13, marginTop: 4 }}>
+                <ul style={{ paddingLeft: 16, margin: 0, lineHeight: "20px" }}>
+                  <li>
+                    <strong>Berat Badan menurut Umur (BB/U):</strong> Mengukur berat badan anak terhadap usianya. Digunakan untuk skrining awal mendeteksi gizi kurang, gizi buruk, atau gizi lebih secara umum.
+                  </li>
+                  <li>
+                    <strong>Tinggi Badan menurut Umur (TB/U):</strong> Mengukur panjang/tinggi badan anak terhadap usianya. Menggambarkan status gizi jangka panjang (kronis). Z-Score di bawah <strong>-2.00 SD</strong> mengindikasikan <strong>Stunting (Pendek / Sangat Pendek)</strong>.
+                  </li>
+                  <li>
+                    <strong>Berat Badan menurut Tinggi Badan (BB/TB):</strong> Mengukur keidealan berat terhadap tinggi badan anak saat ini. Digunakan untuk mendeteksi kondisi tubuh anak kurus (<em>Wasting / Gizi Buruk Akut</em>) atau gemuk/obesitas.
+                  </li>
+                </ul>
+              </div>
+            }
+          />
+
           {hasil.akg && hasil.akg.standar ? (
             <Card size="small" style={{ marginTop: 16 }} title={`Target AKG — ${hasil.akg.kategori.replace(/_/g, " ")} (${hasil.akg.standar.label})`}>
               <Descriptions column={{ xs: 1, sm: 2, lg: 4 }} size="small" bordered>
@@ -227,6 +304,7 @@ export default function GiziFormPage() {
               </Descriptions>
             </Card>
           ) : null}
+
           {hasil.klasifikasi.statusGizi === "GIZI_BURUK" || hasil.klasifikasi.statusGizi === "GIZI_KURANG" || hasil.klasifikasi.stunting ? (
             <Alert
               type="error"
@@ -236,6 +314,7 @@ export default function GiziFormPage() {
               description="Pengawas Gizi telah dinotifikasi. Pastikan rujukan/intervensi gizi dilakukan."
             />
           ) : null}
+
           <Space style={{ marginTop: 16 }}>
             <Button onClick={() => navigate("/gizi")}>Selesai</Button>
             <Button type="primary" onClick={() => navigate(`/penerima/${penerima.id}`)}>

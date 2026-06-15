@@ -207,7 +207,18 @@ export default function PenerimaListPage() {
       title: "Status Gizi",
       dataIndex: "statusGiziTerakhir",
       responsive: ["md"],
-      render: (v) => (v ? <Tag color={STATUS_GIZI_COLOR[v]}>{v}</Tag> : <span style={{ color: "#94a3b8" }}>—</span>),
+      render: (v, record) => (
+        <Space wrap size={4}>
+          {v ? (
+            <Tag color={STATUS_GIZI_COLOR[v]}>{v.replace("_", " ")}</Tag>
+          ) : (
+            <span style={{ color: "#94a3b8" }}>—</span>
+          )}
+          {record.stuntingTerakhir ? (
+            <Tag color="red">STUNTING</Tag>
+          ) : null}
+        </Space>
+      ),
     });
     cols.push({
       title: "Status",
@@ -375,7 +386,7 @@ export default function PenerimaListPage() {
             expandedRowRender: (record) =>
               record.tanggalPengukuranTerakhir ? (
                 <Typography.Text type="secondary">
-                  Pengukuran terakhir: {dayjs(record.tanggalPengukuranTerakhir).format("DD MMM YYYY")} — Status: {record.statusGiziTerakhir}
+                  Pengukuran terakhir: {dayjs(record.tanggalPengukuranTerakhir).format("DD MMM YYYY")} — Status: {record.statusGiziTerakhir?.replace("_", " ")} {record.stuntingTerakhir ? "(Stunting)" : ""}
                 </Typography.Text>
               ) : (
                 <Typography.Text type="secondary">Belum ada pengukuran gizi</Typography.Text>
