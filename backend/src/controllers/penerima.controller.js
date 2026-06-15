@@ -98,7 +98,7 @@ async function listPenerima(req, res, next) {
           pemantauanGizi: {
             orderBy: { tanggalPengukuran: "desc" },
             take: 1,
-            select: { statusGizi: true, tanggalPengukuran: true },
+            select: { statusGizi: true, tanggalPengukuran: true, stunting: true },
           },
         },
       }),
@@ -123,6 +123,7 @@ async function listPenerima(req, res, next) {
         usiaTahun: usia.usiaTahun,
         usiaLabel: usia.label,
         statusGiziTerakhir: last ? last.statusGizi : null,
+        stuntingTerakhir: last ? last.stunting : false,
         tanggalPengukuranTerakhir: last ? last.tanggalPengukuran : null,
       };
     });
