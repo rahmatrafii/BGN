@@ -194,10 +194,10 @@ describe("Z-Score Service - Ibu Hamil, Menyusui & Anak Sekolah > 60 bulan", () =
     expect(z2.zscoreBbTb).toBeNull();
   });
 
-  test("hitungZScore mengembalikan null untuk PESERTA_DIDIK berusia > 60 bulan", () => {
+  test("hitungZScore menghitung BB/U dan TB/U untuk PESERTA_DIDIK berusia > 60 bulan", () => {
     const z = hitungZScore({ beratBadanKg: 30, tinggiBadanCm: 135, usiaBulan: 96, jenisKelamin: "LAKI_LAKI", kategori: "PESERTA_DIDIK" });
-    expect(z.zscoreBbU).toBeNull();
-    expect(z.zscoreTbU).toBeNull();
+    expect(z.zscoreBbU).not.toBeNull();
+    expect(z.zscoreTbU).not.toBeNull();
     expect(z.zscoreBbTb).toBeNull();
   });
 
@@ -235,5 +235,9 @@ describe("Z-Score Service - Ibu Hamil, Menyusui & Anak Sekolah > 60 bulan", () =
     const resBaik = klasifikasiStatusGizi({}, { kategori: "PESERTA_DIDIK", usiaBulan: 96, beratBadanKg: 40, tinggiBadanCm: 135 });
     expect(resBaik.statusGizi).toBe("GIZI_BAIK");
     expect(resBaik.stunting).toBe(false);
+
+    // Test stunting jika Z-Score TB/U < -2
+    const resStunting = klasifikasiStatusGizi({ zscoreTbU: -2.5 }, { kategori: "PESERTA_DIDIK", usiaBulan: 96, beratBadanKg: 30, tinggiBadanCm: 130 });
+    expect(resStunting.stunting).toBe(true);
   });
 });

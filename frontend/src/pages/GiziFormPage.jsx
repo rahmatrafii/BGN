@@ -220,109 +220,211 @@ export default function GiziFormPage() {
         </>
       ) : null}
 
-      {step === 2 && hasil ? (
-        <Card title="Hasil Penilaian Tumbuh Kembang">
-          <Row gutter={[16, 16]}>
-            <Col xs={24} md={8}>
-              <Card size="small" bordered style={{ textAlign: "center", background: "#f8fafc", borderRadius: 8 }}>
-                <div style={{ color: "#64748b", fontSize: 13, fontWeight: 500, minHeight: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  Berat Badan menurut Umur (BB/U)
-                </div>
-                <div style={{ fontSize: 36, fontWeight: "bold", margin: "12px 0", color: "#1e293b" }}>
-                  {hasil.zscore.zscoreBbU !== null ? hasil.zscore.zscoreBbU : "-"}
-                </div>
-                <div style={{ minHeight: 32 }}>
-                  <Tag color={getBbuStatus(hasil.zscore.zscoreBbU).color} style={{ fontSize: 13, padding: "4px 12px", borderRadius: 4 }}>
-                    {getBbuStatus(hasil.zscore.zscoreBbU).label}
-                  </Tag>
-                </div>
-              </Card>
-            </Col>
-            <Col xs={24} md={8}>
-              <Card size="small" bordered style={{ textAlign: "center", background: "#f8fafc", borderRadius: 8 }}>
-                <div style={{ color: "#64748b", fontSize: 13, fontWeight: 500, minHeight: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  Tinggi Badan menurut Umur (TB/U)
-                </div>
-                <div style={{ fontSize: 36, fontWeight: "bold", margin: "12px 0", color: "#1e293b" }}>
-                  {hasil.zscore.zscoreTbU !== null ? hasil.zscore.zscoreTbU : "-"}
-                </div>
-                <div style={{ minHeight: 32 }}>
-                  <Tag color={getTbuStatus(hasil.zscore.zscoreTbU).color} style={{ fontSize: 13, padding: "4px 12px", borderRadius: 4 }}>
-                    {getTbuStatus(hasil.zscore.zscoreTbU).label}
-                  </Tag>
-                </div>
-              </Card>
-            </Col>
-            <Col xs={24} md={8}>
-              <Card size="small" bordered style={{ textAlign: "center", background: "#f8fafc", borderRadius: 8 }}>
-                <div style={{ color: "#64748b", fontSize: 13, fontWeight: 500, minHeight: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  Berat Badan menurut Tinggi (BB/TB)
-                </div>
-                <div style={{ fontSize: 36, fontWeight: "bold", margin: "12px 0", color: "#1e293b" }}>
-                  {hasil.zscore.zscoreBbTb !== null ? hasil.zscore.zscoreBbTb : "-"}
-                </div>
-                <div style={{ minHeight: 32 }}>
-                  <Tag color={getBbtbStatus(hasil.zscore.zscoreBbTb).color} style={{ fontSize: 13, padding: "4px 12px", borderRadius: 4 }}>
-                    {getBbtbStatus(hasil.zscore.zscoreBbTb).label}
-                  </Tag>
-                </div>
-              </Card>
-            </Col>
-          </Row>
+      {step === 2 && hasil ? (() => {
+        const berat = hasil.beratBadanKg;
+        const tinggi = hasil.tinggiBadanCm;
+        const bmi = berat && tinggi ? (Number(berat) / ((Number(tinggi) / 100) ** 2)).toFixed(1) : "-";
+        
+        const isIbu = penerima.kategori === "IBU_HAMIL" || penerima.kategori === "IBU_MENYUSUI";
+        const isAnakSekolah = penerima.kategori === "PESERTA_DIDIK" && hasil.usiaBulan > 60;
 
-          <Alert
-            message="Panduan Membaca Indikator Pertumbuhan (WHO)"
-            type="info"
-            showIcon
-            style={{ marginTop: 20 }}
-            description={
-              <div style={{ fontSize: 13, marginTop: 4 }}>
-                <ul style={{ paddingLeft: 16, margin: 0, lineHeight: "20px" }}>
-                  <li>
-                    <strong>Berat Badan menurut Umur (BB/U):</strong> Mengukur berat badan anak terhadap usianya. Digunakan untuk skrining awal mendeteksi gizi kurang, gizi buruk, atau gizi lebih secara umum.
-                  </li>
-                  <li>
-                    <strong>Tinggi Badan menurut Umur (TB/U):</strong> Mengukur panjang/tinggi badan anak terhadap usianya. Menggambarkan status gizi jangka panjang (kronis). Z-Score di bawah <strong>-2.00 SD</strong> mengindikasikan <strong>Stunting (Pendek / Sangat Pendek)</strong>.
-                  </li>
-                  <li>
-                    <strong>Berat Badan menurut Tinggi Badan (BB/TB):</strong> Mengukur keidealan berat terhadap tinggi badan anak saat ini. Digunakan untuk mendeteksi kondisi tubuh anak kurus (<em>Wasting / Gizi Buruk Akut</em>) atau gemuk/obesitas.
-                  </li>
-                </ul>
-              </div>
-            }
-          />
-
-          {hasil.akg && hasil.akg.standar ? (
-            <Card size="small" style={{ marginTop: 16 }} title={`Target AKG — ${hasil.akg.kategori.replace(/_/g, " ")} (${hasil.akg.standar.label})`}>
-              <Descriptions column={{ xs: 1, sm: 2, lg: 4 }} size="small" bordered>
-                <Descriptions.Item label="AKG Harian">
-                  {hasil.akg.standar.energiKkal} kkal • {hasil.akg.standar.proteinG} g protein
-                </Descriptions.Item>
-                <Descriptions.Item label="Target Energi/Porsi MBG">{hasil.akg.targetPorsi.energiKkal} kkal</Descriptions.Item>
-                <Descriptions.Item label="Target Protein/Porsi">{hasil.akg.targetPorsi.proteinG} g</Descriptions.Item>
-                <Descriptions.Item label="Target Karbo/Porsi">{hasil.akg.targetPorsi.karbohidratG} g</Descriptions.Item>
-              </Descriptions>
-            </Card>
-          ) : null}
-
-          {hasil.klasifikasi.statusGizi === "GIZI_BURUK" || hasil.klasifikasi.statusGizi === "GIZI_KURANG" || hasil.klasifikasi.stunting ? (
+        return (
+          <Card title="Hasil Penilaian Tumbuh Kembang">
             <Alert
-              type="error"
+              message={
+                <span>
+                  <strong>Hasil Analisis: </strong>
+                  Status Gizi: <Tag color={STATUS_COLOR[hasil.klasifikasi.statusGizi]} style={{ fontWeight: "bold", marginLeft: 4, marginRight: 8 }}>{hasil.klasifikasi.statusGizi.replace("_", " ")}</Tag>
+                  {!isIbu && (
+                    <>
+                      Stunting: <Tag color={hasil.klasifikasi.stunting ? "red" : "green"} style={{ fontWeight: "bold" }}>{hasil.klasifikasi.stunting ? "YA (Terindikasi)" : "TIDAK"}</Tag>
+                    </>
+                  )}
+                </span>
+              }
+              type={hasil.klasifikasi.stunting || hasil.klasifikasi.statusGizi === "GIZI_BURUK" || hasil.klasifikasi.statusGizi === "GIZI_KURANG" ? "warning" : "success"}
               showIcon
-              style={{ marginTop: 16 }}
-              message="Tindak lanjut diperlukan"
-              description="Pengawas Gizi telah dinotifikasi. Pastikan rujukan/intervensi gizi dilakukan."
+              style={{ marginBottom: 20 }}
             />
-          ) : null}
 
-          <Space style={{ marginTop: 16 }}>
-            <Button onClick={() => navigate("/gizi")}>Selesai</Button>
-            <Button type="primary" onClick={() => navigate(`/penerima/${penerima.id}`)}>
-              Lihat Riwayat
-            </Button>
-          </Space>
-        </Card>
-      ) : null}
+            <Row gutter={[16, 16]}>
+              {isIbu ? (
+                <Col xs={24} md={24}>
+                  <Card size="small" bordered style={{ textAlign: "center", background: "#f8fafc", borderRadius: 8, padding: "16px 0" }}>
+                    <div style={{ color: "#64748b", fontSize: 14, fontWeight: 500, minHeight: 32, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      Lingkar Lengan Atas (LILA)
+                    </div>
+                    <div style={{ fontSize: 48, fontWeight: "bold", margin: "16px 0", color: "#1e293b" }}>
+                      {hasil.lilaCm !== null && hasil.lilaCm !== undefined ? `${hasil.lilaCm} cm` : "-"}
+                    </div>
+                    <div style={{ minHeight: 32 }}>
+                      {hasil.lilaCm !== null && hasil.lilaCm !== undefined ? (
+                        <Tag color={Number(hasil.lilaCm) < 23.5 ? "volcano" : "green"} style={{ fontSize: 14, padding: "6px 16px", borderRadius: 4 }}>
+                          {Number(hasil.lilaCm) < 23.5 ? "Kekurangan Energi Kronis (KEK)" : "Normal / Gizi Baik"}
+                        </Tag>
+                      ) : (
+                        <Tag color="default" style={{ fontSize: 14, padding: "6px 16px", borderRadius: 4 }}>Tidak Diisi</Tag>
+                      )}
+                    </div>
+                  </Card>
+                </Col>
+              ) : isAnakSekolah ? (
+                <>
+                  <Col xs={24} md={8}>
+                    <Card size="small" bordered style={{ textAlign: "center", background: "#f8fafc", borderRadius: 8 }}>
+                      <div style={{ color: "#64748b", fontSize: 13, fontWeight: 500, minHeight: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        Berat Badan menurut Umur (BB/U)
+                      </div>
+                      <div style={{ fontSize: 36, fontWeight: "bold", margin: "12px 0", color: "#1e293b" }}>
+                        {hasil.zscore.zscoreBbU !== null ? hasil.zscore.zscoreBbU : "-"}
+                      </div>
+                      <div style={{ minHeight: 32 }}>
+                        <Tag color={getBbuStatus(hasil.zscore.zscoreBbU).color} style={{ fontSize: 13, padding: "4px 12px", borderRadius: 4 }}>
+                          {getBbuStatus(hasil.zscore.zscoreBbU).label}
+                        </Tag>
+                      </div>
+                    </Card>
+                  </Col>
+                  <Col xs={24} md={8}>
+                    <Card size="small" bordered style={{ textAlign: "center", background: "#f8fafc", borderRadius: 8 }}>
+                      <div style={{ color: "#64748b", fontSize: 13, fontWeight: 500, minHeight: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        Tinggi Badan menurut Umur (TB/U)
+                      </div>
+                      <div style={{ fontSize: 36, fontWeight: "bold", margin: "12px 0", color: "#1e293b" }}>
+                        {hasil.zscore.zscoreTbU !== null ? hasil.zscore.zscoreTbU : "-"}
+                      </div>
+                      <div style={{ minHeight: 32 }}>
+                        <Tag color={getTbuStatus(hasil.zscore.zscoreTbU).color} style={{ fontSize: 13, padding: "4px 12px", borderRadius: 4 }}>
+                          {getTbuStatus(hasil.zscore.zscoreTbU).label}
+                        </Tag>
+                      </div>
+                    </Card>
+                  </Col>
+                  <Col xs={24} md={8}>
+                    <Card size="small" bordered style={{ textAlign: "center", background: "#f8fafc", borderRadius: 8 }}>
+                      <div style={{ color: "#64748b", fontSize: 13, fontWeight: 500, minHeight: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        Indeks Massa Tubuh (IMT / BMI)
+                      </div>
+                      <div style={{ fontSize: 36, fontWeight: "bold", margin: "12px 0", color: "#1e293b" }}>
+                        {bmi}
+                      </div>
+                      <div style={{ minHeight: 32 }}>
+                        <Tag color={STATUS_COLOR[hasil.klasifikasi.statusGizi] || "default"} style={{ fontSize: 13, padding: "4px 12px", borderRadius: 4 }}>
+                          {hasil.klasifikasi.statusGizi.replace("_", " ")}
+                        </Tag>
+                      </div>
+                    </Card>
+                  </Col>
+                </>
+              ) : (
+                <>
+                  <Col xs={24} md={8}>
+                    <Card size="small" bordered style={{ textAlign: "center", background: "#f8fafc", borderRadius: 8 }}>
+                      <div style={{ color: "#64748b", fontSize: 13, fontWeight: 500, minHeight: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        Berat Badan menurut Umur (BB/U)
+                      </div>
+                      <div style={{ fontSize: 36, fontWeight: "bold", margin: "12px 0", color: "#1e293b" }}>
+                        {hasil.zscore.zscoreBbU !== null ? hasil.zscore.zscoreBbU : "-"}
+                      </div>
+                      <div style={{ minHeight: 32 }}>
+                        <Tag color={getBbuStatus(hasil.zscore.zscoreBbU).color} style={{ fontSize: 13, padding: "4px 12px", borderRadius: 4 }}>
+                          {getBbuStatus(hasil.zscore.zscoreBbU).label}
+                        </Tag>
+                      </div>
+                    </Card>
+                  </Col>
+                  <Col xs={24} md={8}>
+                    <Card size="small" bordered style={{ textAlign: "center", background: "#f8fafc", borderRadius: 8 }}>
+                      <div style={{ color: "#64748b", fontSize: 13, fontWeight: 500, minHeight: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        Tinggi Badan menurut Umur (TB/U)
+                      </div>
+                      <div style={{ fontSize: 36, fontWeight: "bold", margin: "12px 0", color: "#1e293b" }}>
+                        {hasil.zscore.zscoreTbU !== null ? hasil.zscore.zscoreTbU : "-"}
+                      </div>
+                      <div style={{ minHeight: 32 }}>
+                        <Tag color={getTbuStatus(hasil.zscore.zscoreTbU).color} style={{ fontSize: 13, padding: "4px 12px", borderRadius: 4 }}>
+                          {getTbuStatus(hasil.zscore.zscoreTbU).label}
+                        </Tag>
+                      </div>
+                    </Card>
+                  </Col>
+                  <Col xs={24} md={8}>
+                    <Card size="small" bordered style={{ textAlign: "center", background: "#f8fafc", borderRadius: 8 }}>
+                      <div style={{ color: "#64748b", fontSize: 13, fontWeight: 500, minHeight: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        Berat Badan menurut Tinggi (BB/TB)
+                      </div>
+                      <div style={{ fontSize: 36, fontWeight: "bold", margin: "12px 0", color: "#1e293b" }}>
+                        {hasil.zscore.zscoreBbTb !== null ? hasil.zscore.zscoreBbTb : "-"}
+                      </div>
+                      <div style={{ minHeight: 32 }}>
+                        <Tag color={getBbtbStatus(hasil.zscore.zscoreBbTb).color} style={{ fontSize: 13, padding: "4px 12px", borderRadius: 4 }}>
+                          {getBbtbStatus(hasil.zscore.zscoreBbTb).label}
+                        </Tag>
+                      </div>
+                    </Card>
+                  </Col>
+                </>
+              )}
+            </Row>
+
+            {!isIbu && (
+              <Alert
+                message="Panduan Membaca Indikator Pertumbuhan (WHO)"
+                type="info"
+                showIcon
+                style={{ marginTop: 20 }}
+                description={
+                  <div style={{ fontSize: 13, marginTop: 4 }}>
+                    <ul style={{ paddingLeft: 16, margin: 0, lineHeight: "20px" }}>
+                      <li>
+                        <strong>Berat Badan menurut Umur (BB/U):</strong> Mengukur berat badan anak terhadap usianya. Digunakan untuk skrining awal mendeteksi gizi kurang, gizi buruk, atau gizi lebih secara umum.
+                      </li>
+                      <li>
+                        <strong>Tinggi Badan menurut Umur (TB/U):</strong> Mengukur panjang/tinggi badan anak terhadap usianya. Menggambarkan status gizi jangka panjang (kronis). Z-Score di bawah <strong>-2.00 SD</strong> mengindikasikan <strong>Stunting (Pendek / Sangat Pendek)</strong>.
+                      </li>
+                      {!isAnakSekolah && (
+                        <li>
+                          <strong>Berat Badan menurut Tinggi Badan (BB/TB):</strong> Mengukur keidealan berat terhadap tinggi badan anak saat ini. Digunakan untuk mendeteksi kondisi tubuh anak kurus (<em>Wasting / Gizi Buruk Akut</em>) atau gemuk/obesitas.
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                }
+              />
+            )}
+
+            {hasil.akg && hasil.akg.standar ? (
+              <Card size="small" style={{ marginTop: 16 }} title={`Target AKG — ${hasil.akg.kategori.replace(/_/g, " ")} (${hasil.akg.standar.label})`}>
+                <Descriptions column={{ xs: 1, sm: 2, lg: 4 }} size="small" bordered>
+                  <Descriptions.Item label="AKG Harian">
+                    {hasil.akg.standar.energiKkal} kkal • {hasil.akg.standar.proteinG} g protein
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Target Energi/Porsi MBG">{hasil.akg.targetPorsi.energiKkal} kkal</Descriptions.Item>
+                  <Descriptions.Item label="Target Protein/Porsi">{hasil.akg.targetPorsi.proteinG} g</Descriptions.Item>
+                  <Descriptions.Item label="Target Karbo/Porsi">{hasil.akg.targetPorsi.karbohidratG} g</Descriptions.Item>
+                </Descriptions>
+              </Card>
+            ) : null}
+
+            {hasil.klasifikasi.statusGizi === "GIZI_BURUK" || hasil.klasifikasi.statusGizi === "GIZI_KURANG" || hasil.klasifikasi.stunting ? (
+              <Alert
+                type="error"
+                showIcon
+                style={{ marginTop: 16 }}
+                message="Tindak lanjut diperlukan"
+                description="Pengawas Gizi telah dinotifikasi. Pastikan rujukan/intervensi gizi dilakukan."
+              />
+            ) : null}
+
+            <Space style={{ marginTop: 16 }}>
+              <Button onClick={() => navigate("/gizi")}>Selesai</Button>
+              <Button type="primary" onClick={() => navigate(`/penerima/${penerima.id}`)}>
+                Lihat Riwayat
+              </Button>
+            </Space>
+          </Card>
+        );
+      })() : null}
     </div>
   );
 }

@@ -16,9 +16,19 @@ import wfaGirls from "../../data/who_reference/wfa_girls.json";
 import lhfaBoys from "../../data/who_reference/lhfa_boys.json";
 import lhfaGirls from "../../data/who_reference/lhfa_girls.json";
 
-function pickRef(metric, jenisKelamin) {
-  if (metric === "bb") return jenisKelamin === "PEREMPUAN" ? wfaGirls : wfaBoys;
-  return jenisKelamin === "PEREMPUAN" ? lhfaGirls : lhfaBoys;
+import wfaBoys519 from "../../data/who_reference/wfa_boys_5_19.json";
+import wfaGirls519 from "../../data/who_reference/wfa_girls_5_19.json";
+import lhfaBoys519 from "../../data/who_reference/lhfa_boys_5_19.json";
+import lhfaGirls519 from "../../data/who_reference/lhfa_girls_5_19.json";
+
+function pickRef(metric, jenisKelamin, isBalita) {
+  if (isBalita) {
+    if (metric === "bb") return jenisKelamin === "PEREMPUAN" ? wfaGirls : wfaBoys;
+    return jenisKelamin === "PEREMPUAN" ? lhfaGirls : lhfaBoys;
+  } else {
+    if (metric === "bb") return jenisKelamin === "PEREMPUAN" ? wfaGirls519 : wfaBoys519;
+    return jenisKelamin === "PEREMPUAN" ? lhfaGirls519 : lhfaBoys519;
+  }
 }
 
 export default function GiziGrafikPertumbuhan({ riwayatPengukuran = [], jenisKelamin = "LAKI_LAKI", kategori = "BALITA" }) {
@@ -26,7 +36,7 @@ export default function GiziGrafikPertumbuhan({ riwayatPengukuran = [], jenisKel
 
   const isBalita = !kategori || kategori === "BALITA";
 
-  const ref = useMemo(() => pickRef(metric, jenisKelamin), [metric, jenisKelamin]);
+  const ref = useMemo(() => pickRef(metric, jenisKelamin, isBalita), [metric, jenisKelamin, isBalita]);
 
   const maxAge = useMemo(() => {
     if (riwayatPengukuran.length === 0) return 60;
@@ -35,7 +45,7 @@ export default function GiziGrafikPertumbuhan({ riwayatPengukuran = [], jenisKel
   }, [riwayatPengukuran]);
 
   const data = useMemo(() => {
-    const refRows = isBalita
+    const refRows = ref && ref.rows
       ? ref.rows.map((r) => ({
           age: r.age,
           minus3: r.minus3,
@@ -52,13 +62,13 @@ export default function GiziGrafikPertumbuhan({ riwayatPengukuran = [], jenisKel
         anak: metric === "bb" ? Number(p.beratBadanKg) : Number(p.tinggiBadanCm),
       }));
     return { refRows, points };
-  }, [ref, riwayatPengukuran, metric, isBalita]);
+  }, [ref, riwayatPengukuran, metric]);
 
   if (!riwayatPengukuran || riwayatPengukuran.length === 0) {
     return <Empty description="Belum ada riwayat pengukuran" />;
   }
 
-  const chartData = isBalita
+  const chartData = ref && ref.rows
     ? data.refRows.map((r) => ({ ...r, anak: undefined }))
     : data.points;
 
@@ -76,11 +86,11 @@ export default function GiziGrafikPertumbuhan({ riwayatPengukuran = [], jenisKel
         <ResponsiveContainer>
           <ComposedChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis dataKey="age" type="number" domain={[0, isBalita ? 60 : maxAge]} label={{ value: "Usia (bulan)", position: "insideBottom", offset: -5 }} />
+            <XAxis dataKey="age" type="number" domain={[isBalita ? 0 : 60, isBalita ? 60 : Math.max(228, maxAge)]} label={{ value: "Usia (bulan)", position: "insideBottom", offset: -5 }} />
             <YAxis label={{ value: metric === "bb" ? "Berat (kg)" : "Tinggi (cm)", angle: -90, position: "insideLeft" }} />
             <Tooltip />
             <Legend />
-            {isBalita && (
+            {data.refRows && data.refRows.length > 0 && (
               <>
                 <Line type="monotone" dataKey="minus3" data={data.refRows} stroke="#ff4d4f" name="-3 SD" dot={false} strokeDasharray="4 2" />
                 <Line type="monotone" dataKey="minus2" data={data.refRows} stroke="#faad14" name="-2 SD" dot={false} strokeDasharray="4 2" />

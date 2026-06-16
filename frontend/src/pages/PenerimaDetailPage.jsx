@@ -45,6 +45,95 @@ export default function PenerimaDetailPage() {
     },
   ];
 
+  const columnsGiziAnak = [
+    {
+      title: "No",
+      render: (_, __, index) => index + 1,
+      width: 60,
+    },
+    {
+      title: "Tanggal Pengukuran",
+      dataIndex: "tanggal",
+      render: (v) => dayjs(v).format("DD MMM YYYY"),
+    },
+    {
+      title: "Usia",
+      dataIndex: "usiaBulan",
+      render: (v) => `${v} bln`,
+    },
+    {
+      title: "BB (kg)",
+      dataIndex: "beratBadanKg",
+      render: (v) => v !== null && v !== undefined ? `${Number(v)} kg` : "-",
+    },
+    {
+      title: "TB (cm)",
+      dataIndex: "tinggiBadanCm",
+      render: (v) => v !== null && v !== undefined ? `${Number(v)} cm` : "-",
+    },
+    {
+      title: "Z-Score (BB/U | TB/U | BB/TB)",
+      render: (_, r) => {
+        const bbu = r.zscoreBbU !== null && r.zscoreBbU !== undefined ? Number(r.zscoreBbU).toFixed(2) : "-";
+        const tbu = r.zscoreTbU !== null && r.zscoreTbU !== undefined ? Number(r.zscoreTbU).toFixed(2) : "-";
+        const bbtb = r.zscoreBbTb !== null && r.zscoreBbTb !== undefined ? Number(r.zscoreBbTb).toFixed(2) : "-";
+        return `${bbu} | ${tbu} | ${bbtb}`;
+      },
+    },
+    {
+      title: "Status Gizi",
+      dataIndex: "statusGizi",
+      render: (v) => {
+        const colors = { GIZI_BURUK: "red", GIZI_KURANG: "gold", GIZI_BAIK: "green", GIZI_LEBIH: "orange" };
+        return <Tag color={colors[v] || "default"}>{v ? v.replace("_", " ") : "-"}</Tag>;
+      },
+    },
+    {
+      title: "Stunting",
+      dataIndex: "stunting",
+      render: (v) => v ? <Tag color="red">STUNTING</Tag> : <Tag color="green">TIDAK</Tag>,
+    },
+  ];
+
+  const columnsGiziIbu = [
+    {
+      title: "No",
+      render: (_, __, index) => index + 1,
+      width: 60,
+    },
+    {
+      title: "Tanggal Pengukuran",
+      dataIndex: "tanggal",
+      render: (v) => dayjs(v).format("DD MMM YYYY"),
+    },
+    {
+      title: "Berat Badan",
+      dataIndex: "beratBadanKg",
+      render: (v) => v !== null && v !== undefined ? `${Number(v)} kg` : "-",
+    },
+    {
+      title: "Tinggi Badan",
+      dataIndex: "tinggiBadanCm",
+      render: (v) => v !== null && v !== undefined ? `${Number(v)} cm` : "-",
+    },
+    {
+      title: "LILA",
+      dataIndex: "lilaCm",
+      render: (v) => v !== null && v !== undefined ? `${Number(v)} cm` : "-",
+    },
+    {
+      title: "Status Gizi / KEK",
+      render: (_, r) => {
+        const isKek = r.lilaCm ? Number(r.lilaCm) < 23.5 : r.statusGizi === "GIZI_KURANG";
+        return (
+          <Tag color={isKek ? "volcano" : "green"}>
+            {isKek ? "Kekurangan Energi Kronis (KEK)" : "Normal / Gizi Baik"}
+          </Tag>
+        );
+      },
+    },
+  ];
+
   useEffect(() => {
     setLoading(true);
     Promise.all([
@@ -99,7 +188,31 @@ export default function PenerimaDetailPage() {
       </Card>
       <Card title="Riwayat Pemantauan Gizi">
         {riwayatGizi && riwayatGizi.length ? (
-          <GiziGrafikPertumbuhan riwayatPengukuran={riwayatGizi} jenisKelamin={data.jenisKelamin} kategori={data.kategori} />
+          data.kategori === "IBU_HAMIL" || data.kategori === "IBU_MENYUSUI" ? (
+            <Table
+              rowKey="id"
+              dataSource={riwayatGizi}
+              columns={columnsGiziIbu}
+              pagination={false}
+              size="small"
+              locale={{ emptyText: "Belum ada riwayat pengukuran" }}
+            />
+          ) : (
+            <>
+              <GiziGrafikPertumbuhan riwayatPengukuran={riwayatGizi} jenisKelamin={data.jenisKelamin} kategori={data.kategori} />
+              <div style={{ marginTop: 24 }}>
+                <h4 style={{ marginBottom: 12, fontSize: 15, fontWeight: 600, color: "#1e293b" }}>Tabel Riwayat Pengukuran</h4>
+                <Table
+                  rowKey="id"
+                  dataSource={riwayatGizi}
+                  columns={columnsGiziAnak}
+                  pagination={false}
+                  size="small"
+                  locale={{ emptyText: "Belum ada riwayat pengukuran" }}
+                />
+              </div>
+            </>
+          )
         ) : (
           <Empty description="Belum ada pengukuran" />
         )}

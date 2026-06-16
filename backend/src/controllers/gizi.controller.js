@@ -148,10 +148,12 @@ async function riwayatPenerima(req, res, next) {
     ]);
 
     const grafik = data.map((d) => ({
+      id: d.id,
       tanggal: dayjs(d.tanggalPengukuran).format("YYYY-MM-DD"),
       usiaBulan: d.usiaBulan,
       beratBadanKg: d.beratBadanKg ? Number(d.beratBadanKg) : null,
       tinggiBadanCm: d.tinggiBadanCm ? Number(d.tinggiBadanCm) : null,
+      lilaCm: d.lilaCm ? Number(d.lilaCm) : null,
       zscoreBbU: d.zscoreBbU ? Number(d.zscoreBbU) : null,
       zscoreTbU: d.zscoreTbU ? Number(d.zscoreTbU) : null,
       zscoreBbTb: d.zscoreBbTb ? Number(d.zscoreBbTb) : null,

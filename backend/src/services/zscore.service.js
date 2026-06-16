@@ -55,7 +55,7 @@ function hitungZScore({ beratBadanKg, tinggiBadanCm, usiaBulan, jenisKelamin, ka
   if (kategori === "IBU_HAMIL" || kategori === "IBU_MENYUSUI") {
     return out;
   }
-  if (kategori === "PESERTA_DIDIK" && usiaBulan > 60) {
+  if (kategori === "PESERTA_DIDIK" && usiaBulan > 228) {
     return out;
   }
 
@@ -99,7 +99,8 @@ function klasifikasiStatusGizi(z, { kategori, lilaCm, beratBadanKg, tinggiBadanC
       if (bmi < 18.5) statusGizi = "GIZI_KURANG";
       else if (bmi > 25.0) statusGizi = "GIZI_LEBIH";
     }
-    return { statusGizi, stunting: false };
+    const stunting = z && Number.isFinite(z.zscoreTbU) ? z.zscoreTbU < -2 : false;
+    return { statusGizi, stunting };
   }
 
   let statusGizi = "GIZI_BAIK";

@@ -1,0 +1,1356 @@
+{
+  "rows": [
+    {
+      "age": 60,
+      "minus3": 12.4,
+      "minus2": 14.1,
+      "median": 18.3,
+      "plus2": 24.2,
+      "plus3": 27.9
+    },
+    {
+      "age": 61,
+      "minus3": 12.7,
+      "minus2": 14.4,
+      "median": 18.5,
+      "plus2": 24.2,
+      "plus3": 27.8
+    },
+    {
+      "age": 62,
+      "minus3": 12.8,
+      "minus2": 14.5,
+      "median": 18.7,
+      "plus2": 24.4,
+      "plus3": 28.1
+    },
+    {
+      "age": 63,
+      "minus3": 12.9,
+      "minus2": 14.6,
+      "median": 18.9,
+      "plus2": 24.7,
+      "plus3": 28.4
+    },
+    {
+      "age": 64,
+      "minus3": 13.1,
+      "minus2": 14.8,
+      "median": 19,
+      "plus2": 24.9,
+      "plus3": 28.7
+    },
+    {
+      "age": 65,
+      "minus3": 13.2,
+      "minus2": 14.9,
+      "median": 19.2,
+      "plus2": 25.2,
+      "plus3": 29.1
+    },
+    {
+      "age": 66,
+      "minus3": 13.3,
+      "minus2": 15,
+      "median": 19.4,
+      "plus2": 25.5,
+      "plus3": 29.4
+    },
+    {
+      "age": 67,
+      "minus3": 13.4,
+      "minus2": 15.2,
+      "median": 19.6,
+      "plus2": 25.7,
+      "plus3": 29.8
+    },
+    {
+      "age": 68,
+      "minus3": 13.6,
+      "minus2": 15.3,
+      "median": 19.8,
+      "plus2": 26,
+      "plus3": 30.1
+    },
+    {
+      "age": 69,
+      "minus3": 13.7,
+      "minus2": 15.4,
+      "median": 19.9,
+      "plus2": 26.3,
+      "plus3": 30.4
+    },
+    {
+      "age": 70,
+      "minus3": 13.8,
+      "minus2": 15.6,
+      "median": 20.1,
+      "plus2": 26.6,
+      "plus3": 30.8
+    },
+    {
+      "age": 71,
+      "minus3": 13.9,
+      "minus2": 15.7,
+      "median": 20.3,
+      "plus2": 26.8,
+      "plus3": 31.2
+    },
+    {
+      "age": 72,
+      "minus3": 14.1,
+      "minus2": 15.9,
+      "median": 20.5,
+      "plus2": 27.1,
+      "plus3": 31.5
+    },
+    {
+      "age": 73,
+      "minus3": 14.2,
+      "minus2": 16,
+      "median": 20.7,
+      "plus2": 27.4,
+      "plus3": 31.9
+    },
+    {
+      "age": 74,
+      "minus3": 14.3,
+      "minus2": 16.2,
+      "median": 20.9,
+      "plus2": 27.7,
+      "plus3": 32.2
+    },
+    {
+      "age": 75,
+      "minus3": 14.5,
+      "minus2": 16.3,
+      "median": 21.1,
+      "plus2": 28,
+      "plus3": 32.6
+    },
+    {
+      "age": 76,
+      "minus3": 14.6,
+      "minus2": 16.5,
+      "median": 21.3,
+      "plus2": 28.3,
+      "plus3": 33
+    },
+    {
+      "age": 77,
+      "minus3": 14.7,
+      "minus2": 16.6,
+      "median": 21.5,
+      "plus2": 28.6,
+      "plus3": 33.3
+    },
+    {
+      "age": 78,
+      "minus3": 14.9,
+      "minus2": 16.8,
+      "median": 21.7,
+      "plus2": 28.9,
+      "plus3": 33.7
+    },
+    {
+      "age": 79,
+      "minus3": 15,
+      "minus2": 16.9,
+      "median": 21.9,
+      "plus2": 29.2,
+      "plus3": 34.1
+    },
+    {
+      "age": 80,
+      "minus3": 15.1,
+      "minus2": 17.1,
+      "median": 22.1,
+      "plus2": 29.5,
+      "plus3": 34.5
+    },
+    {
+      "age": 81,
+      "minus3": 15.3,
+      "minus2": 17.2,
+      "median": 22.3,
+      "plus2": 29.8,
+      "plus3": 34.9
+    },
+    {
+      "age": 82,
+      "minus3": 15.4,
+      "minus2": 17.4,
+      "median": 22.5,
+      "plus2": 30.1,
+      "plus3": 35.3
+    },
+    {
+      "age": 83,
+      "minus3": 15.5,
+      "minus2": 17.5,
+      "median": 22.7,
+      "plus2": 30.4,
+      "plus3": 35.7
+    },
+    {
+      "age": 84,
+      "minus3": 15.7,
+      "minus2": 17.7,
+      "median": 22.9,
+      "plus2": 30.7,
+      "plus3": 36.1
+    },
+    {
+      "age": 85,
+      "minus3": 15.8,
+      "minus2": 17.8,
+      "median": 23.1,
+      "plus2": 31,
+      "plus3": 36.5
+    },
+    {
+      "age": 86,
+      "minus3": 15.9,
+      "minus2": 18,
+      "median": 23.3,
+      "plus2": 31.3,
+      "plus3": 36.9
+    },
+    {
+      "age": 87,
+      "minus3": 16.1,
+      "minus2": 18.1,
+      "median": 23.5,
+      "plus2": 31.7,
+      "plus3": 37.4
+    },
+    {
+      "age": 88,
+      "minus3": 16.2,
+      "minus2": 18.3,
+      "median": 23.7,
+      "plus2": 32,
+      "plus3": 37.8
+    },
+    {
+      "age": 89,
+      "minus3": 16.3,
+      "minus2": 18.4,
+      "median": 23.9,
+      "plus2": 32.3,
+      "plus3": 38.2
+    },
+    {
+      "age": 90,
+      "minus3": 16.5,
+      "minus2": 18.6,
+      "median": 24.1,
+      "plus2": 32.6,
+      "plus3": 38.7
+    },
+    {
+      "age": 91,
+      "minus3": 16.6,
+      "minus2": 18.7,
+      "median": 24.3,
+      "plus2": 33,
+      "plus3": 39.1
+    },
+    {
+      "age": 92,
+      "minus3": 16.7,
+      "minus2": 18.9,
+      "median": 24.6,
+      "plus2": 33.3,
+      "plus3": 39.6
+    },
+    {
+      "age": 93,
+      "minus3": 16.9,
+      "minus2": 19,
+      "median": 24.8,
+      "plus2": 33.7,
+      "plus3": 40.1
+    },
+    {
+      "age": 94,
+      "minus3": 17,
+      "minus2": 19.2,
+      "median": 25,
+      "plus2": 34,
+      "plus3": 40.5
+    },
+    {
+      "age": 95,
+      "minus3": 17.1,
+      "minus2": 19.3,
+      "median": 25.2,
+      "plus2": 34.4,
+      "plus3": 41
+    },
+    {
+      "age": 96,
+      "minus3": 17.3,
+      "minus2": 19.5,
+      "median": 25.4,
+      "plus2": 34.7,
+      "plus3": 41.5
+    },
+    {
+      "age": 97,
+      "minus3": 17.4,
+      "minus2": 19.6,
+      "median": 25.6,
+      "plus2": 35.1,
+      "plus3": 42
+    },
+    {
+      "age": 98,
+      "minus3": 17.5,
+      "minus2": 19.8,
+      "median": 25.9,
+      "plus2": 35.5,
+      "plus3": 42.5
+    },
+    {
+      "age": 99,
+      "minus3": 17.7,
+      "minus2": 19.9,
+      "median": 26.1,
+      "plus2": 35.8,
+      "plus3": 43.1
+    },
+    {
+      "age": 100,
+      "minus3": 17.8,
+      "minus2": 20.1,
+      "median": 26.3,
+      "plus2": 36.2,
+      "plus3": 43.6
+    },
+    {
+      "age": 101,
+      "minus3": 17.9,
+      "minus2": 20.2,
+      "median": 26.5,
+      "plus2": 36.6,
+      "plus3": 44.1
+    },
+    {
+      "age": 102,
+      "minus3": 18,
+      "minus2": 20.4,
+      "median": 26.7,
+      "plus2": 37,
+      "plus3": 44.7
+    },
+    {
+      "age": 103,
+      "minus3": 18.2,
+      "minus2": 20.5,
+      "median": 27,
+      "plus2": 37.4,
+      "plus3": 45.2
+    },
+    {
+      "age": 104,
+      "minus3": 18.3,
+      "minus2": 20.7,
+      "median": 27.2,
+      "plus2": 37.8,
+      "plus3": 45.8
+    },
+    {
+      "age": 105,
+      "minus3": 18.4,
+      "minus2": 20.8,
+      "median": 27.4,
+      "plus2": 38.2,
+      "plus3": 46.4
+    },
+    {
+      "age": 106,
+      "minus3": 18.6,
+      "minus2": 21,
+      "median": 27.6,
+      "plus2": 38.6,
+      "plus3": 47
+    },
+    {
+      "age": 107,
+      "minus3": 18.7,
+      "minus2": 21.1,
+      "median": 27.9,
+      "plus2": 39,
+      "plus3": 47.6
+    },
+    {
+      "age": 108,
+      "minus3": 18.8,
+      "minus2": 21.3,
+      "median": 28.1,
+      "plus2": 39.4,
+      "plus3": 48.2
+    },
+    {
+      "age": 109,
+      "minus3": 18.9,
+      "minus2": 21.4,
+      "median": 28.3,
+      "plus2": 39.9,
+      "plus3": 48.8
+    },
+    {
+      "age": 110,
+      "minus3": 19.1,
+      "minus2": 21.6,
+      "median": 28.6,
+      "plus2": 40.3,
+      "plus3": 49.5
+    },
+    {
+      "age": 111,
+      "minus3": 19.2,
+      "minus2": 21.7,
+      "median": 28.8,
+      "plus2": 40.7,
+      "plus3": 50.1
+    },
+    {
+      "age": 112,
+      "minus3": 19.3,
+      "minus2": 21.9,
+      "median": 29.1,
+      "plus2": 41.2,
+      "plus3": 50.8
+    },
+    {
+      "age": 113,
+      "minus3": 19.5,
+      "minus2": 22.1,
+      "median": 29.3,
+      "plus2": 41.7,
+      "plus3": 51.5
+    },
+    {
+      "age": 114,
+      "minus3": 19.6,
+      "minus2": 22.2,
+      "median": 29.6,
+      "plus2": 42.1,
+      "plus3": 52.1
+    },
+    {
+      "age": 115,
+      "minus3": 19.7,
+      "minus2": 22.4,
+      "median": 29.8,
+      "plus2": 42.6,
+      "plus3": 52.8
+    },
+    {
+      "age": 116,
+      "minus3": 19.9,
+      "minus2": 22.5,
+      "median": 30.1,
+      "plus2": 43.1,
+      "plus3": 53.5
+    },
+    {
+      "age": 117,
+      "minus3": 20,
+      "minus2": 22.7,
+      "median": 30.4,
+      "plus2": 43.5,
+      "plus3": 54.2
+    },
+    {
+      "age": 118,
+      "minus3": 20.1,
+      "minus2": 22.9,
+      "median": 30.6,
+      "plus2": 44,
+      "plus3": 55
+    },
+    {
+      "age": 119,
+      "minus3": 20.3,
+      "minus2": 23,
+      "median": 30.9,
+      "plus2": 44.5,
+      "plus3": 55.7
+    },
+    {
+      "age": 120,
+      "minus3": 20.4,
+      "minus2": 23.2,
+      "median": 31.2,
+      "plus2": 45,
+      "plus3": 56.4
+    },
+    {
+      "age": 121,
+      "minus3": 17,
+      "minus2": 20,
+      "median": 27.7,
+      "plus2": 38.7,
+      "plus3": 45.9
+    },
+    {
+      "age": 122,
+      "minus3": 17.1,
+      "minus2": 20.1,
+      "median": 28,
+      "plus2": 39.1,
+      "plus3": 46.4
+    },
+    {
+      "age": 123,
+      "minus3": 17.3,
+      "minus2": 20.3,
+      "median": 28.2,
+      "plus2": 39.5,
+      "plus3": 46.8
+    },
+    {
+      "age": 124,
+      "minus3": 17.4,
+      "minus2": 20.4,
+      "median": 28.4,
+      "plus2": 39.8,
+      "plus3": 47.3
+    },
+    {
+      "age": 125,
+      "minus3": 17.5,
+      "minus2": 20.6,
+      "median": 28.7,
+      "plus2": 40.2,
+      "plus3": 47.7
+    },
+    {
+      "age": 126,
+      "minus3": 17.6,
+      "minus2": 20.8,
+      "median": 28.9,
+      "plus2": 40.6,
+      "plus3": 48.2
+    },
+    {
+      "age": 127,
+      "minus3": 17.8,
+      "minus2": 20.9,
+      "median": 29.2,
+      "plus2": 40.9,
+      "plus3": 48.7
+    },
+    {
+      "age": 128,
+      "minus3": 17.9,
+      "minus2": 21.1,
+      "median": 29.4,
+      "plus2": 41.3,
+      "plus3": 49.1
+    },
+    {
+      "age": 129,
+      "minus3": 18,
+      "minus2": 21.2,
+      "median": 29.6,
+      "plus2": 41.7,
+      "plus3": 49.6
+    },
+    {
+      "age": 130,
+      "minus3": 18.1,
+      "minus2": 21.4,
+      "median": 29.9,
+      "plus2": 42.1,
+      "plus3": 50.1
+    },
+    {
+      "age": 131,
+      "minus3": 18.3,
+      "minus2": 21.5,
+      "median": 30.1,
+      "plus2": 42.4,
+      "plus3": 50.5
+    },
+    {
+      "age": 132,
+      "minus3": 18.4,
+      "minus2": 21.7,
+      "median": 30.3,
+      "plus2": 42.8,
+      "plus3": 51
+    },
+    {
+      "age": 133,
+      "minus3": 18.5,
+      "minus2": 21.8,
+      "median": 30.6,
+      "plus2": 43.2,
+      "plus3": 51.5
+    },
+    {
+      "age": 134,
+      "minus3": 18.6,
+      "minus2": 22,
+      "median": 30.8,
+      "plus2": 43.5,
+      "plus3": 51.9
+    },
+    {
+      "age": 135,
+      "minus3": 18.8,
+      "minus2": 22.1,
+      "median": 31,
+      "plus2": 43.9,
+      "plus3": 52.4
+    },
+    {
+      "age": 136,
+      "minus3": 18.9,
+      "minus2": 22.3,
+      "median": 31.3,
+      "plus2": 44.3,
+      "plus3": 52.9
+    },
+    {
+      "age": 137,
+      "minus3": 19,
+      "minus2": 22.5,
+      "median": 31.5,
+      "plus2": 44.7,
+      "plus3": 53.4
+    },
+    {
+      "age": 138,
+      "minus3": 19.1,
+      "minus2": 22.6,
+      "median": 31.8,
+      "plus2": 45,
+      "plus3": 53.8
+    },
+    {
+      "age": 139,
+      "minus3": 19.3,
+      "minus2": 22.8,
+      "median": 32,
+      "plus2": 45.4,
+      "plus3": 54.3
+    },
+    {
+      "age": 140,
+      "minus3": 19.4,
+      "minus2": 22.9,
+      "median": 32.2,
+      "plus2": 45.8,
+      "plus3": 54.8
+    },
+    {
+      "age": 141,
+      "minus3": 19.5,
+      "minus2": 23.1,
+      "median": 32.5,
+      "plus2": 46.2,
+      "plus3": 55.3
+    },
+    {
+      "age": 142,
+      "minus3": 19.6,
+      "minus2": 23.2,
+      "median": 32.7,
+      "plus2": 46.6,
+      "plus3": 55.8
+    },
+    {
+      "age": 143,
+      "minus3": 19.8,
+      "minus2": 23.4,
+      "median": 32.9,
+      "plus2": 46.9,
+      "plus3": 56.3
+    },
+    {
+      "age": 144,
+      "minus3": 19.9,
+      "minus2": 23.5,
+      "median": 33.2,
+      "plus2": 47.3,
+      "plus3": 56.7
+    },
+    {
+      "age": 145,
+      "minus3": 20.1,
+      "minus2": 23.7,
+      "median": 33.5,
+      "plus2": 47.8,
+      "plus3": 57.4
+    },
+    {
+      "age": 146,
+      "minus3": 20.2,
+      "minus2": 24,
+      "median": 33.8,
+      "plus2": 48.3,
+      "plus3": 58
+    },
+    {
+      "age": 147,
+      "minus3": 20.4,
+      "minus2": 24.2,
+      "median": 34.2,
+      "plus2": 48.8,
+      "plus3": 58.6
+    },
+    {
+      "age": 148,
+      "minus3": 20.6,
+      "minus2": 24.4,
+      "median": 34.5,
+      "plus2": 49.3,
+      "plus3": 59.2
+    },
+    {
+      "age": 149,
+      "minus3": 20.8,
+      "minus2": 24.6,
+      "median": 34.8,
+      "plus2": 49.8,
+      "plus3": 59.9
+    },
+    {
+      "age": 150,
+      "minus3": 21,
+      "minus2": 24.8,
+      "median": 35.2,
+      "plus2": 50.3,
+      "plus3": 60.5
+    },
+    {
+      "age": 151,
+      "minus3": 21.1,
+      "minus2": 25,
+      "median": 35.5,
+      "plus2": 50.8,
+      "plus3": 61.1
+    },
+    {
+      "age": 152,
+      "minus3": 21.3,
+      "minus2": 25.3,
+      "median": 35.8,
+      "plus2": 51.3,
+      "plus3": 61.8
+    },
+    {
+      "age": 153,
+      "minus3": 21.5,
+      "minus2": 25.5,
+      "median": 36.1,
+      "plus2": 51.8,
+      "plus3": 62.4
+    },
+    {
+      "age": 154,
+      "minus3": 21.7,
+      "minus2": 25.7,
+      "median": 36.5,
+      "plus2": 52.3,
+      "plus3": 63
+    },
+    {
+      "age": 155,
+      "minus3": 21.8,
+      "minus2": 25.9,
+      "median": 36.8,
+      "plus2": 52.9,
+      "plus3": 63.7
+    },
+    {
+      "age": 156,
+      "minus3": 22,
+      "minus2": 26.1,
+      "median": 37.1,
+      "plus2": 53.4,
+      "plus3": 64.3
+    },
+    {
+      "age": 157,
+      "minus3": 22.2,
+      "minus2": 26.4,
+      "median": 37.4,
+      "plus2": 53.9,
+      "plus3": 64.9
+    },
+    {
+      "age": 158,
+      "minus3": 22.4,
+      "minus2": 26.6,
+      "median": 37.8,
+      "plus2": 54.4,
+      "plus3": 65.6
+    },
+    {
+      "age": 159,
+      "minus3": 22.6,
+      "minus2": 26.8,
+      "median": 38.1,
+      "plus2": 54.9,
+      "plus3": 66.2
+    },
+    {
+      "age": 160,
+      "minus3": 22.7,
+      "minus2": 27,
+      "median": 38.4,
+      "plus2": 55.4,
+      "plus3": 66.8
+    },
+    {
+      "age": 161,
+      "minus3": 22.9,
+      "minus2": 27.2,
+      "median": 38.8,
+      "plus2": 55.9,
+      "plus3": 67.5
+    },
+    {
+      "age": 162,
+      "minus3": 23.1,
+      "minus2": 27.4,
+      "median": 39.1,
+      "plus2": 56.4,
+      "plus3": 68.1
+    },
+    {
+      "age": 163,
+      "minus3": 23.3,
+      "minus2": 27.6,
+      "median": 39.4,
+      "plus2": 56.9,
+      "plus3": 68.8
+    },
+    {
+      "age": 164,
+      "minus3": 23.4,
+      "minus2": 27.9,
+      "median": 39.7,
+      "plus2": 57.4,
+      "plus3": 69.4
+    },
+    {
+      "age": 165,
+      "minus3": 23.6,
+      "minus2": 28.1,
+      "median": 40.1,
+      "plus2": 58,
+      "plus3": 70.1
+    },
+    {
+      "age": 166,
+      "minus3": 23.8,
+      "minus2": 28.3,
+      "median": 40.4,
+      "plus2": 58.5,
+      "plus3": 70.7
+    },
+    {
+      "age": 167,
+      "minus3": 24,
+      "minus2": 28.5,
+      "median": 40.7,
+      "plus2": 59,
+      "plus3": 71.4
+    },
+    {
+      "age": 168,
+      "minus3": 24.1,
+      "minus2": 28.7,
+      "median": 41.1,
+      "plus2": 59.5,
+      "plus3": 72
+    },
+    {
+      "age": 169,
+      "minus3": 24.3,
+      "minus2": 29,
+      "median": 41.4,
+      "plus2": 60,
+      "plus3": 72.7
+    },
+    {
+      "age": 170,
+      "minus3": 24.5,
+      "minus2": 29.2,
+      "median": 41.8,
+      "plus2": 60.6,
+      "plus3": 73.3
+    },
+    {
+      "age": 171,
+      "minus3": 24.7,
+      "minus2": 29.4,
+      "median": 42.1,
+      "plus2": 61.1,
+      "plus3": 74
+    },
+    {
+      "age": 172,
+      "minus3": 24.9,
+      "minus2": 29.7,
+      "median": 42.5,
+      "plus2": 61.6,
+      "plus3": 74.6
+    },
+    {
+      "age": 173,
+      "minus3": 25.1,
+      "minus2": 29.9,
+      "median": 42.8,
+      "plus2": 62.1,
+      "plus3": 75.3
+    },
+    {
+      "age": 174,
+      "minus3": 25.3,
+      "minus2": 30.2,
+      "median": 43.2,
+      "plus2": 62.7,
+      "plus3": 75.9
+    },
+    {
+      "age": 175,
+      "minus3": 25.5,
+      "minus2": 30.4,
+      "median": 43.5,
+      "plus2": 63.2,
+      "plus3": 76.5
+    },
+    {
+      "age": 176,
+      "minus3": 25.7,
+      "minus2": 30.6,
+      "median": 43.9,
+      "plus2": 63.7,
+      "plus3": 77.2
+    },
+    {
+      "age": 177,
+      "minus3": 25.9,
+      "minus2": 30.9,
+      "median": 44.2,
+      "plus2": 64.2,
+      "plus3": 77.8
+    },
+    {
+      "age": 178,
+      "minus3": 26.1,
+      "minus2": 31.1,
+      "median": 44.6,
+      "plus2": 64.8,
+      "plus3": 78.5
+    },
+    {
+      "age": 179,
+      "minus3": 26.3,
+      "minus2": 31.4,
+      "median": 44.9,
+      "plus2": 65.3,
+      "plus3": 79.1
+    },
+    {
+      "age": 180,
+      "minus3": 26.5,
+      "minus2": 31.6,
+      "median": 45.3,
+      "plus2": 65.8,
+      "plus3": 79.8
+    },
+    {
+      "age": 181,
+      "minus3": 26.7,
+      "minus2": 31.8,
+      "median": 45.6,
+      "plus2": 66.3,
+      "plus3": 80.4
+    },
+    {
+      "age": 182,
+      "minus3": 26.9,
+      "minus2": 32.1,
+      "median": 46,
+      "plus2": 66.9,
+      "plus3": 81.1
+    },
+    {
+      "age": 183,
+      "minus3": 27.1,
+      "minus2": 32.3,
+      "median": 46.3,
+      "plus2": 67.4,
+      "plus3": 81.7
+    },
+    {
+      "age": 184,
+      "minus3": 27.3,
+      "minus2": 32.6,
+      "median": 46.7,
+      "plus2": 67.9,
+      "plus3": 82.4
+    },
+    {
+      "age": 185,
+      "minus3": 27.5,
+      "minus2": 32.8,
+      "median": 47,
+      "plus2": 68.4,
+      "plus3": 83
+    },
+    {
+      "age": 186,
+      "minus3": 27.7,
+      "minus2": 33,
+      "median": 47.4,
+      "plus2": 69,
+      "plus3": 83.7
+    },
+    {
+      "age": 187,
+      "minus3": 27.9,
+      "minus2": 33.3,
+      "median": 47.7,
+      "plus2": 69.5,
+      "plus3": 84.3
+    },
+    {
+      "age": 188,
+      "minus3": 28.1,
+      "minus2": 33.5,
+      "median": 48.1,
+      "plus2": 70,
+      "plus3": 85
+    },
+    {
+      "age": 189,
+      "minus3": 28.3,
+      "minus2": 33.7,
+      "median": 48.4,
+      "plus2": 70.6,
+      "plus3": 85.6
+    },
+    {
+      "age": 190,
+      "minus3": 28.5,
+      "minus2": 34,
+      "median": 48.8,
+      "plus2": 71.1,
+      "plus3": 86.3
+    },
+    {
+      "age": 191,
+      "minus3": 28.7,
+      "minus2": 34.2,
+      "median": 49.1,
+      "plus2": 71.6,
+      "plus3": 86.9
+    },
+    {
+      "age": 192,
+      "minus3": 28.9,
+      "minus2": 34.5,
+      "median": 49.5,
+      "plus2": 72.1,
+      "plus3": 87.6
+    },
+    {
+      "age": 193,
+      "minus3": 29.1,
+      "minus2": 34.7,
+      "median": 49.8,
+      "plus2": 72.5,
+      "plus3": 88.1
+    },
+    {
+      "age": 194,
+      "minus3": 29.2,
+      "minus2": 34.9,
+      "median": 50.1,
+      "plus2": 72.9,
+      "plus3": 88.6
+    },
+    {
+      "age": 195,
+      "minus3": 29.4,
+      "minus2": 35.1,
+      "median": 50.3,
+      "plus2": 73.3,
+      "plus3": 89
+    },
+    {
+      "age": 196,
+      "minus3": 29.6,
+      "minus2": 35.3,
+      "median": 50.6,
+      "plus2": 73.7,
+      "plus3": 89.5
+    },
+    {
+      "age": 197,
+      "minus3": 29.7,
+      "minus2": 35.5,
+      "median": 50.9,
+      "plus2": 74.1,
+      "plus3": 90
+    },
+    {
+      "age": 198,
+      "minus3": 29.9,
+      "minus2": 35.7,
+      "median": 51.2,
+      "plus2": 74.5,
+      "plus3": 90.5
+    },
+    {
+      "age": 199,
+      "minus3": 30.1,
+      "minus2": 35.9,
+      "median": 51.5,
+      "plus2": 74.9,
+      "plus3": 90.9
+    },
+    {
+      "age": 200,
+      "minus3": 30.3,
+      "minus2": 36.1,
+      "median": 51.8,
+      "plus2": 75.3,
+      "plus3": 91.4
+    },
+    {
+      "age": 201,
+      "minus3": 30.4,
+      "minus2": 36.3,
+      "median": 52,
+      "plus2": 75.7,
+      "plus3": 91.9
+    },
+    {
+      "age": 202,
+      "minus3": 30.6,
+      "minus2": 36.5,
+      "median": 52.3,
+      "plus2": 76.1,
+      "plus3": 92.4
+    },
+    {
+      "age": 203,
+      "minus3": 30.8,
+      "minus2": 36.7,
+      "median": 52.6,
+      "plus2": 76.5,
+      "plus3": 92.8
+    },
+    {
+      "age": 204,
+      "minus3": 30.9,
+      "minus2": 36.9,
+      "median": 52.9,
+      "plus2": 76.9,
+      "plus3": 93.3
+    },
+    {
+      "age": 205,
+      "minus3": 31.1,
+      "minus2": 37.1,
+      "median": 53.2,
+      "plus2": 77.3,
+      "plus3": 93.8
+    },
+    {
+      "age": 206,
+      "minus3": 31.3,
+      "minus2": 37.3,
+      "median": 53.5,
+      "plus2": 77.7,
+      "plus3": 94.3
+    },
+    {
+      "age": 207,
+      "minus3": 31.5,
+      "minus2": 37.5,
+      "median": 53.8,
+      "plus2": 78.1,
+      "plus3": 94.7
+    },
+    {
+      "age": 208,
+      "minus3": 31.6,
+      "minus2": 37.7,
+      "median": 54,
+      "plus2": 78.5,
+      "plus3": 95.2
+    },
+    {
+      "age": 209,
+      "minus3": 31.8,
+      "minus2": 37.9,
+      "median": 54.3,
+      "plus2": 78.9,
+      "plus3": 95.7
+    },
+    {
+      "age": 210,
+      "minus3": 32,
+      "minus2": 38.1,
+      "median": 54.6,
+      "plus2": 79.3,
+      "plus3": 96.1
+    },
+    {
+      "age": 211,
+      "minus3": 32.1,
+      "minus2": 38.3,
+      "median": 54.9,
+      "plus2": 79.7,
+      "plus3": 96.6
+    },
+    {
+      "age": 212,
+      "minus3": 32.3,
+      "minus2": 38.5,
+      "median": 55.2,
+      "plus2": 80.1,
+      "plus3": 97.1
+    },
+    {
+      "age": 213,
+      "minus3": 32.5,
+      "minus2": 38.7,
+      "median": 55.5,
+      "plus2": 80.5,
+      "plus3": 97.6
+    },
+    {
+      "age": 214,
+      "minus3": 32.7,
+      "minus2": 38.9,
+      "median": 55.7,
+      "plus2": 80.9,
+      "plus3": 98
+    },
+    {
+      "age": 215,
+      "minus3": 32.8,
+      "minus2": 39.1,
+      "median": 56,
+      "plus2": 81.3,
+      "plus3": 98.5
+    },
+    {
+      "age": 216,
+      "minus3": 33,
+      "minus2": 39.3,
+      "median": 56.3,
+      "plus2": 81.7,
+      "plus3": 99
+    },
+    {
+      "age": 217,
+      "minus3": 33.1,
+      "minus2": 39.4,
+      "median": 56.5,
+      "plus2": 82,
+      "plus3": 99.3
+    },
+    {
+      "age": 218,
+      "minus3": 33.2,
+      "minus2": 39.6,
+      "median": 56.7,
+      "plus2": 82.2,
+      "plus3": 99.6
+    },
+    {
+      "age": 219,
+      "minus3": 33.3,
+      "minus2": 39.7,
+      "median": 56.8,
+      "plus2": 82.5,
+      "plus3": 99.8
+    },
+    {
+      "age": 220,
+      "minus3": 33.4,
+      "minus2": 39.8,
+      "median": 57,
+      "plus2": 82.7,
+      "plus3": 100.1
+    },
+    {
+      "age": 221,
+      "minus3": 33.5,
+      "minus2": 39.9,
+      "median": 57.2,
+      "plus2": 82.9,
+      "plus3": 100.4
+    },
+    {
+      "age": 222,
+      "minus3": 33.7,
+      "minus2": 40.1,
+      "median": 57.4,
+      "plus2": 83.2,
+      "plus3": 100.7
+    },
+    {
+      "age": 223,
+      "minus3": 33.8,
+      "minus2": 40.2,
+      "median": 57.5,
+      "plus2": 83.4,
+      "plus3": 101
+    },
+    {
+      "age": 224,
+      "minus3": 33.9,
+      "minus2": 40.3,
+      "median": 57.7,
+      "plus2": 83.7,
+      "plus3": 101.3
+    },
+    {
+      "age": 225,
+      "minus3": 34,
+      "minus2": 40.5,
+      "median": 57.9,
+      "plus2": 83.9,
+      "plus3": 101.6
+    },
+    {
+      "age": 226,
+      "minus3": 34.1,
+      "minus2": 40.6,
+      "median": 58.1,
+      "plus2": 84.2,
+      "plus3": 101.9
+    },
+    {
+      "age": 227,
+      "minus3": 34.2,
+      "minus2": 40.7,
+      "median": 58.3,
+      "plus2": 84.4,
+      "plus3": 102.1
+    },
+    {
+      "age": 228,
+      "minus3": 34.3,
+      "minus2": 40.8,
+      "median": 58.4,
+      "plus2": 84.7,
+      "plus3": 102.4
+    }
+  ]
+}
